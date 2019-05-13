@@ -130,7 +130,7 @@ function CreateEngineInstance(canvasElementId) {
     let rate = 5 * this.deg2rad;
 	let nextEntityId = 1;
 	
-	let pix2metre = 32;
+	this.pix2metre = 32;
 
 	this.playerId = 0;
 	
@@ -156,6 +156,10 @@ function CreateEngineInstance(canvasElementId) {
 		return line;
 	}
 
+	this.ClearBoxes = function() { boxList = []; }
+	this.ClearOutlines = function() { outlineList = []; }
+	this.ClearLines = function() { lineList = []; }
+
 	this.UpdatePlayer = function(id, deltaTime) {
 		if (id === 0) { return; }
 		let avatar = this.FindEntById(id);
@@ -164,10 +168,10 @@ function CreateEngineInstance(canvasElementId) {
 			return;
 		}
 		let speed = 10;
-		if (input.left) { avatar.pos.x -= (speed * pix2metre) * deltaTime; }
-		if (input.right) { avatar.pos.x += (speed * pix2metre) * deltaTime; }
-		if (input.up) { avatar.pos.y -= (speed * pix2metre) * deltaTime; }
-		if (input.down) { avatar.pos.y += (speed * pix2metre) * deltaTime; }
+		if (input.left) { avatar.pos.x -= (speed * this.pix2metre) * deltaTime; }
+		if (input.right) { avatar.pos.x += (speed * this.pix2metre) * deltaTime; }
+		if (input.up) { avatar.pos.y -= (speed * this.pix2metre) * deltaTime; }
+		if (input.down) { avatar.pos.y += (speed * this.pix2metre) * deltaTime; }
 	}
 	
 	// Define game functions
@@ -212,12 +216,12 @@ function CreateEngineInstance(canvasElementId) {
 		let colour = '#0000ff';
 		while (x <= maxX) {
 			this.AddLine(x, minY, x, maxY, colour);
-			x += pix2metre;
+			x += this.pix2metre;
 		}
 		let y = 0;
 		while (y <= maxY) {
 			this.AddLine(minX, y, maxX, y, colour);
-			y += pix2metre;
+			y += this.pix2metre;
 		}
 	}
 	
@@ -284,25 +288,36 @@ function StartTest(canvasElementId) {
 	let min = new V2(0, 0);
 	let max = new V2(canvas.width, canvas.height);
 	let numShapes = 4;
-	let padding = 8;
+	let padding = gs.pix2metre;
 	for (let i = 0; i < numShapes; ++i) {
-		let halfWidth = RandomRange(32, 128);
-		let halfHeight = RandomRange(32, 128);
+		let halfWidth = RandomRange(32, 64);
+		let halfHeight = RandomRange(32, 64);
 		let x = RandomRange(
-			min.x + (halfWidth + padding), max.x - (halfWidth + padding));
+			min.x + (halfWidth + padding),
+			max.x - (halfWidth + padding));
 		let y = RandomRange(
-			min.y + (halfHeight + padding), max.y - (halfHeight + padding));
+			min.y + (halfHeight + padding),
+			max.y - (halfHeight + padding));
 		console.log(`Create box ${x},${y} size ${halfWidth}, ${halfHeight}`);
 		gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
 	}
-
+	let boxes = gs.GetBoxList();
+	let outlinePad = gs.pix2metre / 2;
+	console.log(`Created ${boxes.length} boxes`);
+	for (let i = 0; i < boxes.length; ++i) {
+		let box = boxes[i];
+		gs.AddOutline(
+			box.pos.x,
+			box.pos.y,
+			(box.halfWidth + outlinePad),
+			(box.halfHeight + outlinePad),
+			'#ffff00');
+	}
 	//gs.AddBox(canvas.width / 2, canvas.height / 2, 96, 48, '#ff0000');
-	gs.AddOutline(canvas.width / 2, canvas.height / 2, 128, 160, '#ffff00');
+	//gs.AddOutline(canvas.width / 2, canvas.height / 2, 128, 160, '#ffff00');
 	//gs.AddLine(0, 0, 150, 150, '#0000ff');
 	
 	//let plyr = gs.AddBox(canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
 	//gs.playerId = plyr.id;
-
-	let boxes = gs.GetBoxList();
-	console.log(`Created ${boxes.length} boxes`);
+	return gs;
 }

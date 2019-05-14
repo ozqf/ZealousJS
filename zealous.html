@@ -10,10 +10,132 @@
             class="canvasContainer"
             width="640px"
             height="480px"></canvas>
-        <script src="src/zealous.js"></script>
+        <script src="./src/zealous.js"></script>
         <script>
 //
-StartTest("canvas");
+function BvhNode() {
+    // AABB Should be inflated for leaves
+    // (actual, moving objects)
+    // bounding box for branches
+    this.aabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    // Left should always be occupied..?
+    this.left = null;
+    // If a right is present, this is a branch
+    this.right = null;
+    this.IsLeaf = function() {
+        return (this.right === null);
+    }
+    // attached external ref
+    this.userData = null;
+}
+// convert box draw obj to bvh aabb
+function Box2AABB(box) {
+    return {
+        minX = box.pos.x - box.halfWidth,
+        minY = box.pos.y - box.halfHeight,
+        maxX = box.pos.x - box.halfWidth,
+        maxY = box.pos.y - box.halfHeight
+    };
+}
+
+function Bvh() {
+    let root = null;
+
+    // Purely for debugging!
+    this.nodes = [];
+
+    this.Insert = function(box) {
+        let node = new BvhNode();
+        node.aabb = Box2AABB(box);
+        node.userData = box;
+        nodes.push(node);
+        if (root === null) {
+            root = node;
+            return;
+        }
+    }
+}
+
+function CombineNodeAABBs(node, childA, childB) {
+    node.minX = Math.min(childA.minX, childB.minX);
+    node.minY = Math.min(childA.minY, childB.minY);
+    node.maxX = Math.max(childA.maxX, childB.maxX);
+    node.maxY = Math.max(childA.maxY, childB.maxY);
+}
+
+function AddBvhOutline(gs, node) {
+    let pad = gs.pix2metre / 2;
+
+    gs.AddOutline(
+			box.pos.x,
+			box.pos.y,
+			(box.halfWidth + outlinePad),
+			(box.halfHeight + outlinePad),
+			'#ffff00');
+}
+
+function BuildBvh(gs) {
+    let boxes = gs.GetBoxList();
+    console.log(`Build BVH for ${boxes.length} AABBs`);
+    gs.ClearOutlines();
+
+    let bvh = new Bvh();
+
+    // Create Tree
+	let outlinePad = gs.pix2metre / 2;
+	for (let i = 0; i < boxes.length; ++i) {
+        let box = boxes[i];
+        bvh.Insert(box);
+        /*
+		gs.AddOutline(
+			box.pos.x,
+			box.pos.y,
+			(box.halfWidth + outlinePad),
+			(box.halfHeight + outlinePad),
+            '#ffff00');
+        */
+    }
+    return bvh;
+}
+
+function StartTest(canvasElementId) {
+	let gs = new CreateEngineInstance(canvasElementId);
+	gs.CreateGrid();
+	gs.Start(2);
+
+	let canvas = document.getElementById(canvasElementId);
+
+    // Create Some boxes to build a tree around:
+	let min = new V2(0, 0);
+	let max = new V2(canvas.width, canvas.height);
+	let numShapes = 4;
+	let padding = gs.pix2metre;
+	for (let i = 0; i < numShapes; ++i) {
+		let halfWidth = RandomRange(32, 64);
+		let halfHeight = RandomRange(32, 64);
+		let x = RandomRange(
+			min.x + (halfWidth + padding),
+			max.x - (halfWidth + padding));
+		let y = RandomRange(
+			min.y + (halfHeight + padding),
+			max.y - (halfHeight + padding));
+		gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
+    }
+    
+    let bvh = BuildBvh(gs);
+    for (let i = 0; i < bvh.nodes.length; ++i) {
+        let node = bvh.nodes[i];
+    }
+
+    
+    // init a player object for giggles
+	//let plyr = gs.AddBox(canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
+	//gs.playerId = plyr.id;
+	return gs;
+}
+
+let gs = StartTest("canvas");
+
 //
         </script>
     </body>

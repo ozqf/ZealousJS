@@ -1,13 +1,18 @@
 
 'use strict'
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+// UTILITY FUNCTIONS
+///////////////////////////////////////////////////////////////////////////////////////////////
 function RandomRange(min, max) {
 	return (Math.random() * (max - min) + min);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 // TYPE CONSTRUCTORS
-///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 function V2(newX, newY) {
 	this.x = newX;
 	this.y = newY;
@@ -19,17 +24,19 @@ function V2(newX, newY) {
 	}
 }
 
-function AABB(newX, newY, width, height) {
+// Not sure how to format AABB (pos + size vs min/max vectors)
+/*function AABB(newX, newY, width, height) {
 	this.x = newX;
 	this.y = newY;
 	this.width = width;
 	this.height = height;
-}
+}*/
 
 // Primitive constructors:
-this.BoxCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
-	console.log(`Add box`);
-	this.id = id;
+this.BoxCtor = function(
+	id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
+	
+		this.id = id;
 	this.pos = new V2(newX, newY);
 	this.halfWidth = newHalfWidth;
 	this.halfHeight = newHalfHeight;
@@ -39,14 +46,14 @@ this.BoxCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColour) 
 		ctx.fillStyle = this.colour;
 		let minX = (this.pos.x - this.halfWidth) - camera.minX;
 		let minY = (this.pos.y - this.halfHeight) - camera.minY;
-		//console.log(`Drawing box ${minX}, ${minY} to ${maxX}, ${maxY} col ${this.colour}`);
 		ctx.fillRect(minX, minY,
 			(this.halfWidth * 2), (this.halfHeight * 2));
 	};
 }
 
-this.OutlineCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
-	console.log(`Add Outline`);
+this.OutlineCtor = function(
+	id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
+	
 	this.id = id;
 	this.pos = new V2(newX, newY);
 	this.halfWidth = newHalfWidth;
@@ -58,13 +65,14 @@ this.OutlineCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColo
 		ctx.strokeStyle = this.colour;
 		let minX = (this.pos.x - this.halfWidth) - camera.minX;
 		let minY = (this.pos.y - this.halfHeight) - camera.minY;
-		//console.log(`Drawing box ${minX}, ${minY} to ${maxX}, ${maxY} col ${this.colour}`);
 		ctx.strokeRect(minX, minY,
 			(this.halfWidth * 2), (this.halfHeight * 2));
 	};
 }
 
-this.LineCtor = function(id, startX, startY, endX, endY, colour) {
+this.LineCtor = function(
+	id, startX, startY, endX, endY, colour) {
+	
 	this.id = id;
 	this.a = new V2(startX, startY);
 	this.b = new V2(endX, endY);
@@ -79,11 +87,17 @@ this.LineCtor = function(id, startX, startY, endX, endY, colour) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // MASTER GAME CONSTRUCTOR
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 function CreateEngineInstance(canvasElementId) {
-    console.log("Init");
+    console.log("Init Scene");
 	// Closure - private GameState  vars
     let canvas = document.getElementById(canvasElementId);
 	let ctx = canvas.getContext("2d");
@@ -134,24 +148,27 @@ function CreateEngineInstance(canvasElementId) {
 
 	this.playerId = 0;
 	
-	///////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////
 	// External functions
-	///////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////
 	// Create Entity, insert to draw list
 	this.AddBox = function(x, y, halfWidth, halfHeight, colour) {
-		let box = new BoxCtor(nextEntityId++, x, y, halfWidth, halfHeight, colour);
+		let box = new BoxCtor(
+			nextEntityId++, x, y, halfWidth, halfHeight, colour);
 		boxList.push(box);
 		return box;
 	}
 
 	this.AddOutline = function(x, y, halfWidth, halfHeight, colour) {
-		let outline = new OutlineCtor(nextEntityId++, x, y, halfWidth, halfHeight, colour);
+		let outline = new OutlineCtor(
+			nextEntityId++, x, y, halfWidth, halfHeight, colour);
 		outlineList.push(outline);
 		return outline;
 	}
 
 	this.AddLine = function(x0, y0, x1, y1, colour) {
-		let line = new LineCtor(nextEntityId++, x0, y0, x1, y1, colour);
+		let line = new LineCtor(
+			nextEntityId++, x0, y0, x1, y1, colour);
 		lineList.push(line);
 		return line;
 	}
@@ -259,7 +276,6 @@ function CreateEngineInstance(canvasElementId) {
 	}
 	
 	// Attach input listeners
-	console.log(`Add input handlers`);
 	// Hack to make canvas element accept keyboard events:
 	// https://stackoverflow.com/questions/15631991/how-to-register-onkeydown-event-for-html5-canvas
 	canvas.tabIndex = 1;
@@ -270,54 +286,10 @@ function CreateEngineInstance(canvasElementId) {
 	canvas.addEventListener('focusin', this.HandleGetFocus, true);
 
     this.Start = function(fps) {
-		console.log(`Start game, target fps ${fps}`);
+		console.log(`Start scene refresh, target fps ${fps}`);
 		// DT is in seconds, interval has to be milliseconds
 		let deltaTime = 1 / fps;
 		let interval = 1000 / fps;
         setInterval(() => { this.Tick(deltaTime) }, interval);
 	}
-}
-
-function StartTest(canvasElementId) {
-	let gs = new CreateEngineInstance(canvasElementId);
-	gs.CreateGrid();
-	gs.Start(5);
-
-	let canvas = document.getElementById(canvasElementId);
-
-	let min = new V2(0, 0);
-	let max = new V2(canvas.width, canvas.height);
-	let numShapes = 4;
-	let padding = gs.pix2metre;
-	for (let i = 0; i < numShapes; ++i) {
-		let halfWidth = RandomRange(32, 64);
-		let halfHeight = RandomRange(32, 64);
-		let x = RandomRange(
-			min.x + (halfWidth + padding),
-			max.x - (halfWidth + padding));
-		let y = RandomRange(
-			min.y + (halfHeight + padding),
-			max.y - (halfHeight + padding));
-		console.log(`Create box ${x},${y} size ${halfWidth}, ${halfHeight}`);
-		gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
-	}
-	let boxes = gs.GetBoxList();
-	let outlinePad = gs.pix2metre / 2;
-	console.log(`Created ${boxes.length} boxes`);
-	for (let i = 0; i < boxes.length; ++i) {
-		let box = boxes[i];
-		gs.AddOutline(
-			box.pos.x,
-			box.pos.y,
-			(box.halfWidth + outlinePad),
-			(box.halfHeight + outlinePad),
-			'#ffff00');
-	}
-	//gs.AddBox(canvas.width / 2, canvas.height / 2, 96, 48, '#ff0000');
-	//gs.AddOutline(canvas.width / 2, canvas.height / 2, 128, 160, '#ffff00');
-	//gs.AddLine(0, 0, 150, 150, '#0000ff');
-	
-	//let plyr = gs.AddBox(canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
-	//gs.playerId = plyr.id;
-	return gs;
 }

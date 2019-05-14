@@ -31,10 +31,10 @@ function BvhNode() {
 // convert box draw obj to bvh aabb
 function Box2AABB(box) {
     return {
-        minX = box.pos.x - box.halfWidth,
-        minY = box.pos.y - box.halfHeight,
-        maxX = box.pos.x - box.halfWidth,
-        maxY = box.pos.y - box.halfHeight
+        minX: box.pos.x - box.halfWidth,
+        minY: box.pos.y - box.halfHeight,
+        maxX: box.pos.x + box.halfWidth,
+        maxY: box.pos.y + box.halfHeight
     };
 }
 
@@ -48,7 +48,7 @@ function Bvh() {
         let node = new BvhNode();
         node.aabb = Box2AABB(box);
         node.userData = box;
-        nodes.push(node);
+        this.nodes.push(node);
         if (root === null) {
             root = node;
             return;
@@ -123,13 +123,20 @@ function StartTest(canvasElementId) {
     }
     
     let bvh = BuildBvh(gs);
-    for (let i = 0; i < bvh.nodes.length; ++i) {
+    let numNodes = bvh.nodes.length;
+    console.log(`Show ${numNodes} tree nodes`);
+    // Draw nodes
+    for (let i = 0; i < numNodes; ++i) {
         let node = bvh.nodes[i];
+        let hw = (node.aabb.maxX - node.aabb.minX) / 2;
+        let hh = (node.aabb.maxY - node.aabb.minY) / 2;
+        gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
     }
 
     
     // init a player object for giggles
-	//let plyr = gs.AddBox(canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
+	//let plyr = gs.AddBox(
+    //    canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
 	//gs.playerId = plyr.id;
 	return gs;
 }

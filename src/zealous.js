@@ -156,6 +156,7 @@ function CreateEngineInstance(canvasElementId) {
 	////////////////////////////////////////////////////////////
 	// Create Entity, insert to draw list
 	this.AddBox = function(x, y, halfWidth, halfHeight, colour) {
+		console.log(`{ x: ${x}, y: ${y}, hw: ${halfWidth}, hh: ${halfHeight} }`);
 		let box = new BoxCtor(
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);
 		boxList.push(box);

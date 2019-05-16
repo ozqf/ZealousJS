@@ -8,14 +8,14 @@
         <canvas
             id="canvas"
             class="canvasContainer"
-            width="640px"
-            height="400px"></canvas>
+            width="550px"
+            height="275px"></canvas>
         <br>
         <canvas
             id="canvas2"
             class="canvasContainer"
-            width="640px"
-            height="400px"></canvas>
+            width="550px"
+            height="275px"></canvas>
         <script src="./src/zealous.js"></script>
         <script src="./src/bvh.js"></script>
         <script>
@@ -33,31 +33,37 @@ function AddBvhOutline(gs, node) {
 			'#ffff00');
 }
 
-function HandBuildBvh() {
-	
-}
+function HandBuildBvh(gs) {
+    //let boxes = gs.GetBoxList();
+    //console.log(`Build BVH for ${boxes.length} AABBs`);
+    let nodes = [];
+    let left = new BvhNode();
+    left.aabb = {
+        minX: 275.5 - 39.7,
+        minY: 148.4 - 43.3,
+        maxX: 275.5 + 39.7,
+        maxY: 148.4 + 43.3
+    };
+    nodes.push(left);
+    let right = new BvhNode();
+    right.aabb = {
+        minX: 180.4 - 46.5,
+        minY: 187.1 - 46,
+        maxX: 180.4 + 46.5,
+        maxY: 187.1 + 46
+    };
+    nodes.push(right);
 
-function BuildBvh(gs) {
-    let boxes = gs.GetBoxList();
-    console.log(`Build BVH for ${boxes.length} AABBs`);
-    gs.ClearOutlines();
+    let root = new BvhNode();
+    root.left = left;
+    root.right = right;
+    root.aabb = BvhCombineAABBs(left.aabb, right.aabb);
+    nodes.push(root);
 
     let bvh = new Bvh();
-
-    // Create Tree
-	let outlinePad = gs.pix2metre / 2;
-	for (let i = 0; i < boxes.length; ++i) {
-        let box = boxes[i];
-        bvh.Insert(box);
-        /*
-		gs.AddOutline(
-			box.pos.x,
-			box.pos.y,
-			(box.halfWidth + outlinePad),
-			(box.halfHeight + outlinePad),
-            '#ffff00');
-        */
-    }
+    bvh.root = root;
+    bvh.nodes = nodes;
+    console.log(`Hand built ${bvh.nodes.length} nodes`);
     return bvh;
 }
 
@@ -70,19 +76,34 @@ function BuildWorld(canvasElementId) {
 
     // Create Some boxes to build a tree around:
 	let min = new V2(0, 0);
-	let max = new V2(canvas.width, canvas.height);
-	let numShapes = 4;
-	let padding = gs.pix2metre;
+    let max = new V2(canvas.width, canvas.height);
+    let shapes = [
+        { x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 },
+        { x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 },
+        { x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 },
+        { x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 },
+    ];
+	let numShapes = shapes.length;
+	//let numShapes = 4;
+    //let padding = gs.pix2metre;
+    let colour = '#ff0000';
 	for (let i = 0; i < numShapes; ++i) {
-		let halfWidth = RandomRange(32, 64);
-		let halfHeight = RandomRange(32, 64);
+        gs.AddBox(
+            shapes[i].x,
+            shapes[i].y,
+            shapes[i].hw,
+            shapes[i].hh,
+            colour);
+		/*let halfWidth = RandomRange(16, 48);
+		let halfHeight = RandomRange(16, 48);
 		let x = RandomRange(
 			min.x + (halfWidth + padding),
 			max.x - (halfWidth + padding));
 		let y = RandomRange(
 			min.y + (halfHeight + padding),
 			max.y - (halfHeight + padding));
-		gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
+        gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
+        */
     }
     // init a player object for giggles
 	//let plyr = gs.AddBox(
@@ -91,8 +112,12 @@ function BuildWorld(canvasElementId) {
 	return gs;
 }
 
-function DrawBvhVolumes(gs) {
-	let bvh = BuildBvh(gs);
+function TreeTest(gs) {
+    gs.ClearOutlines();
+    // Generate Tree
+    let bvh = HandBuildBvh(gs);
+    
+    // Draw outlines over nodes.
     let numNodes = bvh.nodes.length;
     console.log(`Show ${numNodes} tree nodes`);
     // Draw nodes
@@ -115,8 +140,7 @@ function BuildGraph(canvasElementId) {
 let gs1 = BuildWorld("canvas");
 let gs2 = BuildGraph("canvas2");
 
-
-let bvh = DrawBvhVolumes(gs1);
+let bvh = TreeTest(gs1);
 
 //
         </script>

@@ -29,7 +29,7 @@ function Bvh() {
     // Purely for debugging!
     this.nodes = [];
 
-    this.Insert = function(box) {
+    /*this.Insert = function(box) {
         let node = new BvhNode();
         node.aabb = Box2AABB(box);
         node.userData = box;
@@ -38,12 +38,14 @@ function Bvh() {
             root = node;
             return;
         }
-    }
+    }*/
 }
 
-function BvhCombineNodeAABBs(node, childA, childB) {
-    node.minX = Math.min(childA.minX, childB.minX);
-    node.minY = Math.min(childA.minY, childB.minY);
-    node.maxX = Math.max(childA.maxX, childB.maxX);
-    node.maxY = Math.max(childA.maxY, childB.maxY);
+function BvhCombineAABBs(a, b) {
+    return {
+        minX: Math.min(a.minX, b.minX),
+        minY: Math.min(a.minY, b.minY),
+        maxX: Math.max(a.maxX, b.maxX),
+        maxY: Math.max(a.maxY, b.maxY)
+    };
 }

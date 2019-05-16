@@ -9,59 +9,18 @@
             id="canvas"
             class="canvasContainer"
             width="640px"
-            height="480px"></canvas>
+            height="400px"></canvas>
+        <br>
+        <canvas
+            id="canvas2"
+            class="canvasContainer"
+            width="640px"
+            height="400px"></canvas>
         <script src="./src/zealous.js"></script>
+        <script src="./src/bvh.js"></script>
         <script>
 //
-function BvhNode() {
-    // AABB Should be inflated for leaves
-    // (actual, moving objects)
-    // bounding box for branches
-    this.aabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-    // Left should always be occupied..?
-    this.left = null;
-    // If a right is present, this is a branch
-    this.right = null;
-    this.IsLeaf = function() {
-        return (this.right === null);
-    }
-    // attached external ref
-    this.userData = null;
-}
-// convert box draw obj to bvh aabb
-function Box2AABB(box) {
-    return {
-        minX: box.pos.x - box.halfWidth,
-        minY: box.pos.y - box.halfHeight,
-        maxX: box.pos.x + box.halfWidth,
-        maxY: box.pos.y + box.halfHeight
-    };
-}
 
-function Bvh() {
-    let root = null;
-
-    // Purely for debugging!
-    this.nodes = [];
-
-    this.Insert = function(box) {
-        let node = new BvhNode();
-        node.aabb = Box2AABB(box);
-        node.userData = box;
-        this.nodes.push(node);
-        if (root === null) {
-            root = node;
-            return;
-        }
-    }
-}
-
-function CombineNodeAABBs(node, childA, childB) {
-    node.minX = Math.min(childA.minX, childB.minX);
-    node.minY = Math.min(childA.minY, childB.minY);
-    node.maxX = Math.max(childA.maxX, childB.maxX);
-    node.maxY = Math.max(childA.maxY, childB.maxY);
-}
 
 function AddBvhOutline(gs, node) {
     let pad = gs.pix2metre / 2;
@@ -72,6 +31,10 @@ function AddBvhOutline(gs, node) {
 			(box.halfWidth + outlinePad),
 			(box.halfHeight + outlinePad),
 			'#ffff00');
+}
+
+function HandBuildBvh() {
+	
 }
 
 function BuildBvh(gs) {
@@ -98,7 +61,7 @@ function BuildBvh(gs) {
     return bvh;
 }
 
-function StartTest(canvasElementId) {
+function BuildWorld(canvasElementId) {
 	let gs = new CreateEngineInstance(canvasElementId);
 	gs.CreateGrid();
 	gs.Start(2);
@@ -121,8 +84,15 @@ function StartTest(canvasElementId) {
 			max.y - (halfHeight + padding));
 		gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
     }
-    
-    let bvh = BuildBvh(gs);
+    // init a player object for giggles
+	//let plyr = gs.AddBox(
+    //    canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
+	//gs.playerId = plyr.id;
+	return gs;
+}
+
+function DrawBvhVolumes(gs) {
+	let bvh = BuildBvh(gs);
     let numNodes = bvh.nodes.length;
     console.log(`Show ${numNodes} tree nodes`);
     // Draw nodes
@@ -132,16 +102,21 @@ function StartTest(canvasElementId) {
         let hh = (node.aabb.maxY - node.aabb.minY) / 2;
         gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
     }
-
-    
-    // init a player object for giggles
-	//let plyr = gs.AddBox(
-    //    canvas.width / 2, canvas.height / 2, 16, 16, '#00ff00');
-	//gs.playerId = plyr.id;
-	return gs;
+	return bvh;
 }
 
-let gs = StartTest("canvas");
+function BuildGraph(canvasElementId) {
+    let gs = new CreateEngineInstance(canvasElementId);
+    gs.AddBox(300, 200, 64, 32, '#ffffff');
+    gs.Start(2);
+    return gs;
+}
+
+let gs1 = BuildWorld("canvas");
+let gs2 = BuildGraph("canvas2");
+
+
+let bvh = DrawBvhVolumes(gs1);
 
 //
         </script>

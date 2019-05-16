@@ -1,4 +1,6 @@
-
+/*
+Canvas scene and primitives for prototyping
+*/
 'use strict'
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +38,7 @@ function V2(newX, newY) {
 this.BoxCtor = function(
 	id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
 	
-		this.id = id;
+	this.id = id;
 	this.pos = new V2(newX, newY);
 	this.halfWidth = newHalfWidth;
 	this.halfHeight = newHalfHeight;
@@ -138,6 +140,7 @@ function CreateEngineInstance(canvasElementId) {
 		minY: 0
 	};
 	
+	this.dirty = true;
     this.deg2rad = 3.141593 / 180;
     this.rad2deg = 57.2958;
     let radians = 0;
@@ -193,6 +196,8 @@ function CreateEngineInstance(canvasElementId) {
 	
 	// Define game functions
     this.Tick = (deltaTime) => {
+		if (!this.dirty) { return; }
+		this.dirty = false;
 		this.UpdatePlayer(this.playerId, deltaTime);
 		this.Draw();
         tick++;

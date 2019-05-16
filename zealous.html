@@ -33,31 +33,58 @@ function AddBvhOutline(gs, node) {
 			'#ffff00');
 }
 
+const SHAPES_TAG = 1;
+
+function Box2AABB(box) {
+    return {
+        minX: box.x - box.hw,
+        minY: box.y - box.hh,
+        maxX: box.x + box.hw,
+        maxY: box.y + box.hh,
+    };
+}
+
 function HandBuildBvh(gs) {
     //let boxes = gs.GetBoxList();
     //console.log(`Build BVH for ${boxes.length} AABBs`);
     let nodes = [];
-    let left = new BvhNode();
-    left.aabb = {
-        minX: 275.5 - 39.7,
-        minY: 148.4 - 43.3,
-        maxX: 275.5 + 39.7,
-        maxY: 148.4 + 43.3
-    };
-    nodes.push(left);
-    let right = new BvhNode();
-    right.aabb = {
+    /*
+                1
+               / \
+              /   \
+             2     3
+            /\     /\
+           /  \   /  \
+           4   5 6    7
+    */
+    
+    let four = new BvhNode();
+    let five = new BvhNode();
+    let six = new BvhNode();
+    let seven = new BvhNode();
+    four.aabb = Box2AABB({ x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 });
+    five.aabb = Box2AABB({ x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 });
+    six.aabb = Box2AABB({ x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 });
+    seven.aabb = Box2AABB({ x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 });
+
+    let two = new BvhNode();
+    two.left = four;
+    two.right = five;
+    two.aabb = BvhCombineAABBs(two.left.aabb, two.right.aabb);
+    nodes.push(two);
+    let three = new BvhNode();
+    three.aabb = {
         minX: 180.4 - 46.5,
         minY: 187.1 - 46,
         maxX: 180.4 + 46.5,
         maxY: 187.1 + 46
     };
-    nodes.push(right);
+    nodes.push(three);
 
     let root = new BvhNode();
-    root.left = left;
-    root.right = right;
-    root.aabb = BvhCombineAABBs(left.aabb, right.aabb);
+    root.left = two;
+    root.right = three;
+    root.aabb = BvhCombineAABBs(root.left.aabb, root.right.aabb);
     nodes.push(root);
 
     let bvh = new Bvh();
@@ -79,8 +106,8 @@ function BuildWorld(canvasElementId) {
     let max = new V2(canvas.width, canvas.height);
     let shapes = [
         { x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 },
-        { x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 },
         { x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 },
+        { x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 },
         { x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 },
     ];
 	let numShapes = shapes.length;
@@ -88,12 +115,13 @@ function BuildWorld(canvasElementId) {
     //let padding = gs.pix2metre;
     let colour = '#ff0000';
 	for (let i = 0; i < numShapes; ++i) {
-        gs.AddBox(
+        let box = gs.AddBox(
             shapes[i].x,
             shapes[i].y,
             shapes[i].hw,
             shapes[i].hh,
             colour);
+        box.tag = SHAPES_TAG;
 		/*let halfWidth = RandomRange(16, 48);
 		let halfHeight = RandomRange(16, 48);
 		let x = RandomRange(
@@ -112,21 +140,39 @@ function BuildWorld(canvasElementId) {
 	return gs;
 }
 
+function RecursiveWalk(node, callback) {
+    console.log(`visit node:`, node)
+    callback(node);
+    if (node.left) { RecursiveWalk(node.left, callback); }
+    if (node.right) { RecursiveWalk(node.right, callback); }
+}
+
 function TreeTest(gs) {
     gs.ClearOutlines();
     // Generate Tree
     let bvh = HandBuildBvh(gs);
-    
+    let numNodes = 0;
+    RecursiveWalk(bvh.root, (node) => {
+        let hw = (node.aabb.maxX - node.aabb.minX) / 2;
+        let hh = (node.aabb.maxY - node.aabb.minY) / 2;
+        gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
+        gs.AddCircle(node.aabb.minX + hw, node.aabb.minY + hh, hw, '#ffff00');
+        numNodes++;
+    });
+    /*
     // Draw outlines over nodes.
     let numNodes = bvh.nodes.length;
-    console.log(`Show ${numNodes} tree nodes`);
+    
     // Draw nodes
     for (let i = 0; i < numNodes; ++i) {
         let node = bvh.nodes[i];
         let hw = (node.aabb.maxX - node.aabb.minX) / 2;
         let hh = (node.aabb.maxY - node.aabb.minY) / 2;
         gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
+        gs.AddCircle(node.aabb.minX + hw, node.aabb.minY + hh, hw, '#ffff00');
     }
+    */
+    console.log(`Show ${numNodes} tree nodes`);
 	return bvh;
 }
 

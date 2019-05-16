@@ -34,12 +34,18 @@ function V2(newX, newY) {
 	this.height = height;
 }*/
 
+function ZqfInitShapeBase(obj, id, tag, depth, x, y) {
+	obj.id = id;
+	obj.tag = tag;
+	obj.depth = depth;
+	obj.pos = new V2(x, y);
+}
+
 // Primitive constructors:
-this.BoxCtor = function(
+function BoxCtor(
 	id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
+	ZqfInitShapeBase(this, id, 0, 0, newX, newY);
 	
-	this.id = id;
-	this.pos = new V2(newX, newY);
 	this.halfWidth = newHalfWidth;
 	this.halfHeight = newHalfHeight;
 	this.colour = newColour;
@@ -53,10 +59,20 @@ this.BoxCtor = function(
 	};
 }
 
-this.OutlineCtor = function(
-	id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
-	
-	this.id = id;
+function CircleCtor(id, newX, newY, radius, newColour) {
+	ZqfInitShapeBase(this, id, 0, 0, newX, newY);
+	this.radius = radius;
+	this.colour = newColour;
+	this.Draw = function(ctx, camera) {
+		ctx.fillStyle = this.colour;
+		ctx.beginPath();
+		ctx.arc(this.pos.x - camera.minX, this.pos.y - camera.minY, this.radius, 0, 2 * Math.PI);
+		ctx.stroke();
+	}
+}
+
+this.OutlineCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
+	ZqfInitShapeBase(this, id, 0, 0, newX, newY);
 	this.pos = new V2(newX, newY);
 	this.halfWidth = newHalfWidth;
 	this.halfHeight = newHalfHeight;
@@ -72,10 +88,8 @@ this.OutlineCtor = function(
 	};
 }
 
-this.LineCtor = function(
-	id, startX, startY, endX, endY, colour) {
-	
-	this.id = id;
+this.LineCtor = function(id, startX, startY, endX, endY, colour) {
+	ZqfInitShapeBase(this, id, 0, 0, 0, 0);
 	this.a = new V2(startX, startY);
 	this.b = new V2(endX, endY);
 	this.colour = colour;
@@ -118,7 +132,7 @@ function CreateEngineInstance(canvasElementId) {
 	ctx.fillStyle = "#000000";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-	let boxList = [];
+	let shapes = [];
 	let outlineList = [];
 	let lineList = [];
 	let sysEvents = [];
@@ -159,21 +173,28 @@ function CreateEngineInstance(canvasElementId) {
 		console.log(`{ x: ${x}, y: ${y}, hw: ${halfWidth}, hh: ${halfHeight} }`);
 		let box = new BoxCtor(
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);
-		boxList.push(box);
+		shapes.push(box);
 		return box;
 	}
 
 	this.AddOutline = function(x, y, halfWidth, halfHeight, colour) {
 		let outline = new OutlineCtor(
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);
-		outlineList.push(outline);
+		shapes.push(outline);
 		return outline;
+	}
+
+	this.AddCircle	= function(x, y, radius, colour) {
+		let line = new CircleCtor(
+			nextEntityId++, x, y, radius, colour);
+		shapes.push(line);
+		return line;
 	}
 
 	this.AddLine = function(x0, y0, x1, y1, colour) {
 		let line = new LineCtor(
 			nextEntityId++, x0, y0, x1, y1, colour);
-		lineList.push(line);
+		shapes.push(line);
 		return line;
 	}
 
@@ -212,16 +233,9 @@ function CreateEngineInstance(canvasElementId) {
 		camera.halfHeight = canvas.height * 0.5;
 		camera.minX = camera.x - camera.halfWidth;
 		camera.minY = camera.y - camera.halfHeight;
-		for (let i = 0; i < lineList.length; ++i) {
-			let obj = lineList[i];
-			obj.Draw(ctx, camera);
-		}
-		for (let i = 0; i < boxList.length; ++i) {
-			let obj = boxList[i];
-			obj.Draw(ctx, camera);
-		}
-		for (let i = 0; i < outlineList.length; ++i) {
-			let obj = outlineList[i];
+		
+		for (let i = 0; i < shapes.length; ++i) {
+			let obj = shapes[i];
 			obj.Draw(ctx, camera);
 		}
 	};

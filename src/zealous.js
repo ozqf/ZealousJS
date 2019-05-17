@@ -1,7 +1,7 @@
 /*
 Canvas scene and primitives for prototyping
 */
-'use strict'
+"use strict";
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // UTILITY FUNCTIONS
@@ -20,10 +20,10 @@ function V2(newX, newY) {
 	this.y = newY;
 	this.Radians = function() {
 		return Math.atan2(y, x);
-	}
+	};
 	this.Mag = function() {
 		return Math.sqrt((x * x) + (y * y));
-	}
+	};
 }
 
 // Not sure how to format AABB (pos + size vs min/max vectors)
@@ -65,13 +65,14 @@ function CircleCtor(id, newX, newY, radius, newColour) {
 	this.colour = newColour;
 	this.Draw = function(ctx, camera) {
 		ctx.fillStyle = this.colour;
+		ctx.strokeStyle = this.colour;
 		ctx.beginPath();
 		ctx.arc(this.pos.x - camera.minX, this.pos.y - camera.minY, this.radius, 0, 2 * Math.PI);
 		ctx.stroke();
-	}
+	};
 }
 
-this.OutlineCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
+function OutlineCtor(id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
 	ZqfInitShapeBase(this, id, 0, 0, newX, newY);
 	this.pos = new V2(newX, newY);
 	this.halfWidth = newHalfWidth;
@@ -88,7 +89,7 @@ this.OutlineCtor = function(id, newX, newY, newHalfWidth, newHalfHeight, newColo
 	};
 }
 
-this.LineCtor = function(id, startX, startY, endX, endY, colour) {
+function LineCtor(id, startX, startY, endX, endY, colour) {
 	ZqfInitShapeBase(this, id, 0, 0, 0, 0);
 	this.a = new V2(startX, startY);
 	this.b = new V2(endX, endY);
@@ -100,7 +101,7 @@ this.LineCtor = function(id, startX, startY, endX, endY, colour) {
 		ctx.moveTo(this.a.x, this.a.y);
 		ctx.lineTo(this.b.x, this.b.y);
 		ctx.stroke();
-	}
+	};
 }
 
 
@@ -112,7 +113,7 @@ this.LineCtor = function(id, startX, startY, endX, endY, colour) {
 // MASTER GAME CONSTRUCTOR
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-function CreateEngineInstance(canvasElementId) {
+function CreateEngineInstance(canvasElementId, preTickCallback) {
     console.log("Init Scene");
 	// Closure - private GameState  vars
     let canvas = document.getElementById(canvasElementId);
@@ -129,19 +130,6 @@ function CreateEngineInstance(canvasElementId) {
 		d: 68
 	};
 	
-	ctx.fillStyle = "#000000";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-	let shapes = [];
-	let outlineList = [];
-	let lineList = [];
-	let sysEvents = [];
-	let input = {
-		left: false,
-		right: false
-	};
-	let tick = 0;
-	
 	// Update camera width/height at render time
 	let camera = {
 		x: canvas.width / 2,
@@ -154,6 +142,17 @@ function CreateEngineInstance(canvasElementId) {
 		minY: 0
 	};
 	
+	ctx.fillStyle = "#000000";
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	
+	let PreTickCallback = preTickCallback;
+	let shapes = [];
+	let input = {
+		left: false,
+		right: false
+	};
+	let tick = 0;
+	
 	this.dirty = true;
     this.deg2rad = 3.141593 / 180;
     this.rad2deg = 57.2958;
@@ -165,10 +164,11 @@ function CreateEngineInstance(canvasElementId) {
 
 	this.playerId = 0;
 	
+	this.cursorPos = new V2(0, 0);
+	
 	////////////////////////////////////////////////////////////
-	// External functions
+	// Entity Creation
 	////////////////////////////////////////////////////////////
-	// Create Entity, insert to draw list
 	this.AddBox = function(x, y, halfWidth, halfHeight, colour) {
 		console.log(`{ x: ${x}, y: ${y}, hw: ${halfWidth}, hh: ${halfHeight} }`);
 		let box = new BoxCtor(
@@ -197,11 +197,22 @@ function CreateEngineInstance(canvasElementId) {
 		shapes.push(line);
 		return line;
 	}
-
-	this.ClearBoxes = function() { boxList = []; }
-	this.ClearOutlines = function() { outlineList = []; }
-	this.ClearLines = function() { lineList = []; }
-
+	
+	////////////////////////////////////////////////////////////
+	// Entity removal
+	////////////////////////////////////////////////////////////
+	this.RemoveAll = () => { shapes = []; }
+	this.RemoveAllByTag = (tag) => {
+		let count = 0;
+		for (let i = shapes.length - 1; i >= 0; --i) {
+			if (shapes[i].tag !== tag) { continue; }
+			shapes.splice(i, 1);
+			count++;
+		}
+		return count;
+	}
+	
+	
 	this.UpdatePlayer = function(id, deltaTime) {
 		if (id === 0) { return; }
 		let avatar = this.FindEntById(id);
@@ -216,14 +227,20 @@ function CreateEngineInstance(canvasElementId) {
 		if (input.down) { avatar.pos.y += (speed * this.pix2metre) * deltaTime; }
 	}
 	
-	// Define game functions
+	///////////////////////////////////////////////////////////////////
+	// Frame cycle
+	///////////////////////////////////////////////////////////////////
     this.Tick = (deltaTime) => {
 		if (!this.dirty) { return; }
 		this.dirty = false;
+		if (PreTickCallback) {
+			PreTickCallback(this, deltaTime);
+		}
+		
 		this.UpdatePlayer(this.playerId, deltaTime);
 		this.Draw();
         tick++;
-    };
+    }
 	
     this.Draw = function() {
 		//ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -238,19 +255,15 @@ function CreateEngineInstance(canvasElementId) {
 			let obj = shapes[i];
 			obj.Draw(ctx, camera);
 		}
-	};
-
-	this.GetBoxList = function() {
-		return boxList;
 	}
 
-	this.CreateGrid = function() {
+	this.CreateGrid = () => {
 		let minX = 0;
 		let minY = 0;
 		let maxX = canvas.width;
 		let maxY = canvas.height;
 		let x = 0;
-		let colour = '#0000ff';
+		let colour = "#0000ff";
 		while (x <= maxX) {
 			this.AddLine(x, minY, x, maxY, colour);
 			x += this.pix2metre;
@@ -262,13 +275,29 @@ function CreateEngineInstance(canvasElementId) {
 		}
 	}
 	
+	///////////////////////////////////////////////////////////////////
+	// Entity Search
+	///////////////////////////////////////////////////////////////////
 	this.FindEntById = function(id) {
-		let l = boxList.length;
+		let l = shapes.length;
 		for (let i = 0; i < l; ++i) {
-			if (boxList[i].id === id) { return boxList[i]; }
+			if (shapes[i].id === id) { return shapes[i]; }
 		} return null;
 	}
-
+	
+	this.FindAllByTag = function(tag) {
+		let results = [];
+		let l = shapes.length;
+		for (let i = 0; i < l; ++i) {
+			if (shapes[i].tag !== tag) {continue;}
+			results.push(shapes[i]);
+		}
+		return results;
+	}
+	
+	///////////////////////////////////////////////////////////////////
+	// Event handlers
+	///////////////////////////////////////////////////////////////////
 	this.HandleKeyDown = function(ev) {
 		//console.log(`Key ${ev.keyCode} down`);
 		let k = ev.keyCode;
@@ -286,6 +315,13 @@ function CreateEngineInstance(canvasElementId) {
 		if (k === keys.up) { input.up = false; return; }
 		if (k === keys.down) { input.down = false; return; }
 	}
+	
+	this.HandleMouseMove = (ev) => {
+		let rect = canvas.getBoundingClientRect();
+		this.cursorPos.x = ev.clientX - rect.left;
+		this.cursorPos.y = ev.clientY - rect.top;
+		//return this.cursorPos;
+	}
 
 	this.HandleGetFocus = function() {
 		console.log(`Get focus`);
@@ -302,9 +338,13 @@ function CreateEngineInstance(canvasElementId) {
 
 	canvas.onkeydown = this.HandleKeyDown;
 	canvas.onkeyup = this.HandleKeyUp;
-	canvas.addEventListener('focusout', this.HandleLoseFocus, true);
-	canvas.addEventListener('focusin', this.HandleGetFocus, true);
-
+	canvas.addEventListener("focusout", this.HandleLoseFocus, true);
+	canvas.addEventListener("focusin", this.HandleGetFocus, true);
+	canvas.addEventListener("mousemove", this.HandleMouseMove, true);
+	
+	///////////////////////////////////////////////////////////////////
+	// Startup
+	///////////////////////////////////////////////////////////////////
     this.Start = function(fps) {
 		console.log(`Start scene refresh, target fps ${fps}`);
 		// DT is in seconds, interval has to be milliseconds

@@ -9,8 +9,15 @@ function BvhNode() {
     this.right = null;
     this.IsLeaf = function() {
         return (this.right === null);
-    }
+    };
+	this.VsPoint = (x, y) => {
+		if (x < this.aabb.minX || x > this.aabb.maxX) { return false; }
+		if (y < this.aabb.minY || y > this.aabb.maxY) { return false; }
+		return true;
+	};
     // attached external ref
+	// ...I mean, it's javascript, so you can do it where you like but
+	// here would be consistent.
     this.userData = null;
 }
 // convert box draw obj to bvh aabb

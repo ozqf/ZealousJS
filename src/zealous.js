@@ -57,6 +57,14 @@ function BoxCtor(
 		ctx.fillRect(minX, minY,
 			(this.halfWidth * 2), (this.halfHeight * 2));
 	};
+	this.ToAABB = function() {
+		return {
+			minX: this.pos.x - this.halfWidth,
+			minY: this.pos.y - this.halfHeight,
+			maxX: this.pos.x + this.halfWidth,
+			maxY: this.pos.y + this.halfHeight
+		};
+	};
 }
 
 function CircleCtor(id, newX, newY, radius, newColour) {
@@ -69,6 +77,14 @@ function CircleCtor(id, newX, newY, radius, newColour) {
 		ctx.beginPath();
 		ctx.arc(this.pos.x - camera.minX, this.pos.y - camera.minY, this.radius, 0, 2 * Math.PI);
 		ctx.stroke();
+	};
+	this.ToAABB = function() {
+		return {
+			minX: this.pos.x - this.radius,
+			minY: this.pos.y - this.radius,
+			maxX: this.pos.x + this.radius,
+			maxY: this.pos.y + this.radius
+		};
 	};
 }
 
@@ -87,6 +103,14 @@ function OutlineCtor(id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
 		ctx.strokeRect(minX, minY,
 			(this.halfWidth * 2), (this.halfHeight * 2));
 	};
+	this.ToAABB = function() {
+		return {
+			minX: this.pos.x - this.halfWidth,
+			minY: this.pos.y - this.halfHeight,
+			maxX: this.pos.x + this.halfWidth,
+			maxY: this.pos.y + this.halfHeight
+		};
+	};
 }
 
 function LineCtor(id, startX, startY, endX, endY, colour) {
@@ -101,6 +125,14 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 		ctx.moveTo(this.a.x, this.a.y);
 		ctx.lineTo(this.b.x, this.b.y);
 		ctx.stroke();
+	};
+	this.ToAABB = function() {
+		return {
+			minX: Math.min(this.a.x, this.b.x),
+			minY: Math.min(this.a.y, this.b.y),
+			maxX: Math.max(this.a.x, this.b.x),
+			maxY: Math.max(this.a.y, this.b.y)
+		};
 	};
 }
 
@@ -185,10 +217,10 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	}
 
 	this.AddCircle	= function(x, y, radius, colour) {
-		let line = new CircleCtor(
+		let circle = new CircleCtor(
 			nextEntityId++, x, y, radius, colour);
-		shapes.push(line);
-		return line;
+		shapes.push(circle);
+		return circle;
 	}
 
 	this.AddLine = function(x0, y0, x1, y1, colour) {
@@ -320,6 +352,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		let rect = canvas.getBoundingClientRect();
 		this.cursorPos.x = ev.clientX - rect.left;
 		this.cursorPos.y = ev.clientY - rect.top;
+		this.dirty = true;
 		//return this.cursorPos;
 	}
 

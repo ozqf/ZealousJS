@@ -27,16 +27,12 @@ const SHAPES_TAG = 1;
 const BVH_OUTLINE_TAG = 2;
 
 const COLOUR_BOX_DEFAULT = "#ff0000";
-const COLOUR_BOX_OVERLAP = "#ff00ff";
+const COLOUR_BOX_OVERLAP = "#00ffff";
 
 const COLOUR_BVH_DEFAULT = "#ffff00";
 const COLOUR_BVH_OVERLAP = "#00ff00";
 
 let cursorId = -1;
-
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
 // Tree Traversal
@@ -55,27 +51,20 @@ function RecursiveWalk(node, callback) {
 }
 
 function WorldTickCallback(gs, deltaTime) {
-	gs.dirty = true;
-	//console.log(`World tick`);
 	let cursor = gs.FindEntById(cursorId);
 	if (cursor) {
 		cursor.pos.x = gs.cursorPos.x;
 		cursor.pos.y = gs.cursorPos.y;
 	}
-	
 	let shapesToClear = gs.FindAllByTag(SHAPES_TAG);
 	for (let i = 0; i < shapesToClear.length; ++i) {
 		shapesToClear[i].colour = COLOUR_BOX_DEFAULT;
 	}
-	
 	let overlaps = [];
 	RecursivePointTest(gs.cursorPos.x, gs.cursorPos.y, bvh.root, (node) => {
-		//console.log(`Overlapping node: `, node);
 		overlaps.push(node.userData);
 	});
-	let str = "Set ";
 	for (let i = 0; i < overlaps.length; ++i) {
-		str += `${overlaps[i]}, `;
 		let id = overlaps[i];
 		let shape = gs.FindEntById(id);
 		if (shape === null) {
@@ -84,23 +73,20 @@ function WorldTickCallback(gs, deltaTime) {
 		}
 		shape.colour = COLOUR_BOX_OVERLAP;
 	}
-	console.log(str);
-	//console.log(`Over ${overlaps} shapes`);
 }
 
 function GraphTickCallback(gs, deltaTime) {
-	gs.dirty = true;
 }
 
 function AddBvhOutline(gs, node) {
     let pad = gs.pix2metre / 2;
 
     gs.AddOutline(
-			box.pos.x,
-			box.pos.y,
-			(box.halfWidth + outlinePad),
-			(box.halfHeight + outlinePad),
-			'#ffff00');
+		box.pos.x,
+		box.pos.y,
+		(box.halfWidth + outlinePad),
+		(box.halfHeight + outlinePad),
+		'#ffff00');
 }
 
 function Box2AABB(box) {
@@ -108,8 +94,27 @@ function Box2AABB(box) {
         minX: box.x - box.hw,
         minY: box.y - box.hh,
         maxX: box.x + box.hw,
-        maxY: box.y + box.hh,
+        maxY: box.y + box.hh
     };
+}
+
+function RecursiveInsert(node) {
+
+}
+
+function AutoBuildBvh(gs) {
+    let shapes = gs.FindAllByTag(SHAPES_TAG);
+    let bvh = new Bvh();
+    let numShapes = shapes.length;
+    for (let i = 0; i < numShapes; ++i) {
+        let shape = shapes[i];
+        let node = new BvhNode();
+        node.aabb = shape.ToAABB();
+        if (bvh.root === null) { bvh.root = node; continue; }
+
+
+    }
+    return bvh;
 }
 
 function HandBuildBvh(gs) {
@@ -117,13 +122,13 @@ function HandBuildBvh(gs) {
     //console.log(`Build BVH for ${boxes.length} AABBs`);
     let nodes = [];
     /*
-                1
-               / \
-              /   \
-             2     3
-            /\     /\
-           /  \   /  \
-           4   5 6    7
+                 1
+               /   \
+             /       \
+            2         3
+           / \       / \
+          /   \     /   \
+         4     5   6     7
     */
     
 	let one = new BvhNode();
@@ -133,7 +138,8 @@ function HandBuildBvh(gs) {
     let five = new BvhNode();
     let six = new BvhNode();
     let seven = new BvhNode();
-	
+	let eight = new BvhNode();
+	let nine = new BvhNode();
 	// Bottom
     four.aabb = Box2AABB({ x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 });
     five.aabb = Box2AABB({ x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 });

@@ -124,7 +124,7 @@ function WorldTickCallback(gs, input, deltaTime) {
     if (gs.bvh.nextNodeId > 0) {
         percentage = Math.round(visits.length / (gs.bvh.nextNodeId) * 100);
     }
-    console.log(`Of ${shapesToClear.length} shapes: Over ${overlaps.length} visited ${visits.length} (${percentage}%)`);
+    console.log(`Of ${shapesToClear.length} shapes: Over ${overlaps.length}: visited ${visits.length} of ${gs.bvh.nextNodeId} nodes (${percentage}%)`);
     //console.log(`Of ${shapesToClear.length} shapes: Over ${overlaps.join(", ")} visited ${visits.length} (${percentage}%)`);
     //console.log(`nodes: ${visits.join(", ")}`);
 	for (let i = 0; i < overlaps.length; ++i) {

@@ -52,14 +52,22 @@ function RecursiveWalk(node, callback) {
     if (node.right) { RecursiveWalk(node.right, callback); }
 }
 
-function WorldTickCallback(gs, deltaTime) {
-	let cursor = gs.FindEntById(cursorId);
+function WorldTickCallback(gs, input, deltaTime) {
+    let cursor = gs.FindEntById(cursorId);
 	if (cursor) {
 		cursor.pos.x = gs.cursorPos.x;
 		cursor.pos.y = gs.cursorPos.y;
     }
 
-    // Check raw AABB
+    if (input.mouseOneClick) {
+        // Add shape, rebuild tree
+        let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
+        box.tag = TAG_BOXES;
+        CreateBvhForShapes(gs);
+    }
+
+    // Check raw AABB vs first shape
+    /*
     let aabb = cursor.ToAABB();
     let shapes = gs.FindAllByTag(TAG_BOXES);
     let len = shapes.length;
@@ -74,9 +82,9 @@ function WorldTickCallback(gs, deltaTime) {
     if (OverlapAABBs(aabb, boxAABB)) {
         console.log(`OVERLAP!`);
     }
-    
+    */
     // Analyse tree
-    /*
+    
 	let shapesToClear = gs.FindAllByTag(TAG_BOXES);
 	for (let i = 0; i < shapesToClear.length; ++i) {
 		shapesToClear[i].colour = COLOUR_BOX_DEFAULT;
@@ -84,18 +92,36 @@ function WorldTickCallback(gs, deltaTime) {
     let overlaps = [];
     let visits = [];
     
-    let PointTest = (x, y, node, callback) => {
+    let PointTestVisit = (x, y, node, callback) => {
         visits.push(node.id);
-        if (!node.VsPoint(x, y)) { return false; }
+        //if (!node.VsPoint(x, y)) { return false; }
         if (!node.left || !node.right) { callback(node); return true; }
-        PointTest(x, y, node.left, callback);
-        PointTest(x, y, node.right, callback);
+        if (node.left.VsPoint(x, y)) {
+            PointTestVisit(x, y, node.left, callback);
+        }
+        if (node.right.VsPoint(x, y)) {
+            PointTestVisit(x, y, node.right, callback);
+        }
+        //PointTest(x, y, node.left, callback);
+        //PointTest(x, y, node.right, callback);
         return true;
     };
-	PointTest(gs.cursorPos.x, gs.cursorPos.y, bvh.root, (node) => {
-		overlaps.push(node.userData);
-    });
-    console.log(`Over ${overlaps.join(", ")} visited ${visits.length} nodes: ${visits.join(", ")}`);
+    let x = gs.cursorPos.x, y = gs.cursorPos.y;
+    if (gs.bvh.root !== null) {
+        if (gs.bvh.root.VsPoint(x, y)) {
+            PointTestVisit(x, y, gs.bvh.root, (node) => {
+            overlaps.push(node.userData);
+            });
+        }
+        //PointTest(gs.cursorPos.x, gs.cursorPos.y, gs.bvh.root, (node) => {
+	    //	overlaps.push(node.userData);
+        //});
+    }
+    else {
+        console.log(`Tree has no root`);
+    }
+	
+    console.log(`Of ${shapesToClear.length} shapes: Over ${overlaps.join(", ")}visited ${visits.length} nodes: ${visits.join(", ")}`);
 	for (let i = 0; i < overlaps.length; ++i) {
 		let id = overlaps[i];
 		let shape = gs.FindEntById(id);
@@ -105,10 +131,10 @@ function WorldTickCallback(gs, deltaTime) {
 		}
 		shape.colour = COLOUR_BOX_OVERLAP;
     }
-    */
+    
 }
 
-function GraphTickCallback(gs, deltaTime) {
+function GraphTickCallback(gs, input, deltaTime) {
 }
 
 function AddBvhOutline(gs, node) {
@@ -172,7 +198,11 @@ function AutoBuildBvh(gs) {
         node.id = bvh.nextNodeId++;
         node.aabb = shape.ToAABB();
         node.userData = shape.id;
-        if (bvh.root === null) { bvh.root = node; continue; }
+        if (bvh.root === null) {
+            console.log(`Bvh: Create root`);
+            bvh.root = node;
+            continue;
+        }
 
         let queryNode = bvh.root;
         // Explore tree until a node to split is found
@@ -254,14 +284,18 @@ function HandBuildBvh(gs) {
 ////////////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////////////
-function TreeTest(gs) {
+function CreateBvhForShapes(gs) {
     gs.RemoveAllByTag(TAG_BVH_OUTLINE);
     // Generate Tree
     //let bvh = HandBuildBvh(gs);2
-    let bvh = AutoBuildBvh(gs);
+    gs.bvh = AutoBuildBvh(gs);
+    
+    if (gs.bvh.root === null) {
+        return bvh;
+    }
     let numNodes = 0;
-    RecursiveWalk(bvh.root, (node) => {
-        let a = node.aabb;
+    RecursiveWalk(gs.bvh.root, (node) => {
+        //let a = x.aabb;
         //console.log(`Draw node min ${a.minX}, ${a.minY} max ${a.maxX}, ${a.maxY}`);
         let hw = (node.aabb.maxX - node.aabb.minX) / 2;
         let hh = (node.aabb.maxY - node.aabb.minY) / 2;
@@ -285,14 +319,14 @@ function TreeTest(gs) {
     }
     */
     console.log(`Show ${numNodes} tree nodes`);
-	return bvh;
 }
 
 // Create a bunch of boxes around for which the BVH will be constructed
 function BuildWorld(canvasElementId) {
 	let gs = new CreateEngineInstance(canvasElementId, WorldTickCallback);
 	gs.CreateGrid();
-	gs.Start(20);
+    gs.Start(20);
+    gs.bvh = new Bvh();
 
     let canvas = document.getElementById(canvasElementId);
     // Create Some boxes to build a tree around:
@@ -302,7 +336,7 @@ function BuildWorld(canvasElementId) {
     {
         let min = new V2(0, 0);
         let max = new V2(canvas.width, canvas.height);
-        let numShapes = 1;
+        let numShapes = 0;
         let padding = gs.pix2metre;
 	    for (let i = 0; i < numShapes; ++i) {
 	    	let halfWidth = RandomRange(16, 48);
@@ -324,7 +358,7 @@ function BuildWorld(canvasElementId) {
             { x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 },
             { x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 },
             { x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 },
-            { x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 },
+            //{ x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 },
         ];
         let numShapes = shapes.length;
 	    for (let i = 0; i < numShapes; ++i) {
@@ -339,7 +373,7 @@ function BuildWorld(canvasElementId) {
         }
     }
     
-	let cursor = gs.AddCircle(0, 0, 8, '#00ffff');
+	let cursor = gs.AddCircle(0, 0, 32, '#00ffff');
 	cursorId = cursor.id;
     // init a player object for giggles
 	//let plyr = gs.AddBox(

@@ -180,6 +180,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	let PreTickCallback = preTickCallback;
 	let shapes = [];
 	let input = {
+		mouseOneClick: false,
 		left: false,
 		right: false
 	};
@@ -266,11 +267,13 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		if (!this.dirty) { return; }
 		this.dirty = false;
 		if (PreTickCallback) {
-			PreTickCallback(this, deltaTime);
+			PreTickCallback(this, input, deltaTime);
 		}
 		
 		this.UpdatePlayer(this.playerId, deltaTime);
 		this.Draw();
+		// Clear single frame events
+		input.mouseOneClick = false;
         tick++;
     }
 	
@@ -337,6 +340,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		if (k === keys.right) { input.right = true; return; }
 		if (k === keys.up) { input.up = true; return; }
 		if (k === keys.down) { input.down = true; return; }
+		else { console.log(`Unused keyCode ${ev.keyCode} Down`); }
 	}
 	
 	this.HandleKeyUp = function(ev) {
@@ -346,6 +350,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		if (k === keys.right) { input.right = false; return; }
 		if (k === keys.up) { input.up = false; return; }
 		if (k === keys.down) { input.down = false; return; }
+		else { console.log(`Unused keyCode ${ev.keyCode} Up`); }
 	}
 	
 	this.HandleMouseMove = (ev) => {
@@ -363,6 +368,19 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	this.HandleLoseFocus = function() {
 		console.log(`Lose focus`);
 	}
+
+	this.HandleMouseDown = (ev) => {
+
+	}
+	
+	this.HandleMouseUp = (ev) => {
+		
+	}
+
+	this.handleMouseClick = (ev) => {
+		input.mouseOneClick = true;
+		this.dirty = true;
+	}
 	
 	// Attach input listeners
 	// Hack to make canvas element accept keyboard events:
@@ -374,6 +392,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	canvas.addEventListener("focusout", this.HandleLoseFocus, true);
 	canvas.addEventListener("focusin", this.HandleGetFocus, true);
 	canvas.addEventListener("mousemove", this.HandleMouseMove, true);
+	canvas.addEventListener("click", this.handleMouseClick, true);
 	
 	///////////////////////////////////////////////////////////////////
 	// Startup

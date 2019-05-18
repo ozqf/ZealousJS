@@ -26,8 +26,9 @@ function OverlapAABBs(a, b) {
     return false;
 }
 
+// Lower score === better
 function CompareAABBs(a, b) {
-    if (!OverlapAABBs(a, b)) { return -1; }
+    //if (!OverlapAABBs(a, b)) { return Number.POSITIVE_INFINITY; }
     let combination = BvhCombineAABBs(a, b);
     return CalcAABBVolume(combination);
 }
@@ -80,7 +81,7 @@ function BvhNode() {
 
 function Bvh() {
     this.root = null;
-    this.nextNodeId = 1;
+    this.nextNodeId = 0;
     // Purely for debugging!
     this.nodes = [];
 

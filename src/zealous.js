@@ -38,6 +38,7 @@ function ZqfInitShapeBase(obj, id, tag, depth, x, y) {
 	obj.id = id;
 	obj.tag = tag;
 	obj.depth = depth;
+	obj.externalId = null;
 	obj.pos = new V2(x, y);
 }
 
@@ -121,7 +122,7 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 	this.Draw = function(ctx, camera) {
 		ctx.beginPath();
 		ctx.strokeStyle = this.colour;
-		ctx.lineWidth = 2;
+		ctx.lineWidth = 1;
 		ctx.moveTo(this.a.x, this.a.y);
 		ctx.lineTo(this.b.x, this.b.y);
 		ctx.stroke();
@@ -146,7 +147,6 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 function CreateEngineInstance(canvasElementId, preTickCallback) {
-    console.log("Init Scene");
 	// Closure - private GameState  vars
     let canvas = document.getElementById(canvasElementId);
 	let ctx = canvas.getContext("2d");
@@ -203,7 +203,6 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	// Entity Creation
 	////////////////////////////////////////////////////////////
 	this.AddBox = function(x, y, halfWidth, halfHeight, colour) {
-		console.log(`{ x: ${x}, y: ${y}, hw: ${halfWidth}, hh: ${halfHeight} }`);
 		let box = new BoxCtor(
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);
 		shapes.push(box);
@@ -275,7 +274,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		// Clear single frame events
 		input.mouseOneClick = false;
         tick++;
-    }
+	}
 	
     this.Draw = function() {
 		//ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -285,14 +284,16 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		camera.halfHeight = canvas.height * 0.5;
 		camera.minX = camera.x - camera.halfWidth;
 		camera.minY = camera.y - camera.halfHeight;
-		
+		shapes.sort((a, b) => {
+			return b.depth - a.depth;
+		});
 		for (let i = 0; i < shapes.length; ++i) {
 			let obj = shapes[i];
 			obj.Draw(ctx, camera);
 		}
 	}
 
-	this.CreateGrid = () => {
+	this.CreateGrid = (depth) => {
 		let minX = 0;
 		let minY = 0;
 		let maxX = canvas.width;
@@ -300,12 +301,14 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		let x = 0;
 		let colour = "#0000ff";
 		while (x <= maxX) {
-			this.AddLine(x, minY, x, maxY, colour);
+			let line = this.AddLine(x, minY, x, maxY, colour);
+			line.depth = depth;
 			x += this.pix2metre;
 		}
 		let y = 0;
 		while (y <= maxY) {
-			this.AddLine(minX, y, maxX, y, colour);
+			let line = this.AddLine(minX, y, maxX, y, colour);
+			line.depth = depth;
 			y += this.pix2metre;
 		}
 	}
@@ -317,6 +320,13 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		let l = shapes.length;
 		for (let i = 0; i < l; ++i) {
 			if (shapes[i].id === id) { return shapes[i]; }
+		} return null;
+	}
+	
+	this.FindEntByExternalId = function(id) {
+		let l = shapes.length;
+		for (let i = 0; i < l; ++i) {
+			if (shapes[i].externalId === id) { return shapes[i]; }
 		} return null;
 	}
 	

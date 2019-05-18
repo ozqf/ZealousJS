@@ -3,19 +3,43 @@
     .canvasContainer {
         overflow: hidden;
     }
+    .row {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    .column {
+        display: flex;
+        flex-direction: column;
+        justify-content:flex-start;
+    }
+    .world-canvas {
+        max-width: 550px;
+        max-height: 450px;
+    }
     </style>
     <body>
-        <canvas
-            id="canvas"
-            class="canvasContainer"
-            width="550px"
-            height="275px"></canvas>
-        <br>
-        <canvas
-            id="canvas2"
-            class="canvasContainer"
-            width="550px"
-            height="275px"></canvas>
+        <div class="column">
+            <div class="row">
+                <button onclick="RebuildTree()">Rebuild</button>
+                <button onclick="ClearScene()">Clear</button>
+                <div id="debugText"></div>
+            </div>
+            <canvas
+                id="canvas"
+                class="world-canvas"
+                width="550px"
+                height="450px"></canvas>
+            <br>
+            <canvas
+                id="canvas2"
+                class="canvasContainer"
+                width="550px"
+                height="64px"></canvas>
+        </div>
+        
+        
+        
         <script src="./src/zealous.js"></script>
         <script src="./src/bvh.js"></script>
         <script>
@@ -27,13 +51,23 @@ const TAG_BOXES = 1;
 const TAG_BVH_OUTLINE = 2;
 const TAG_CURSOR_BOX = 3;
 
-const COLOUR_BOX_DEFAULT = "#ff0000";
-const COLOUR_BOX_OVERLAP = "#00ffff";
+const COLOUR_BOX_DEFAULT = "#ff0000ff";
+const COLOUR_BOX_OVERLAP = "#00ffffff";
 
-const COLOUR_BVH_DEFAULT = "#ffff00";
-const COLOUR_BVH_OVERLAP = "#00ff00";
+const COLOUR_BVH_DEFAULT = "#999999ff";
+const COLOUR_BVH_OVERLAP = "#ffff00ff";
 
 let cursorId = -1;
+let debugText = "";
+
+////////////////////////////////////////////////////////////////////
+// Utils
+////////////////////////////////////////////////////////////////////
+function SetDebugText(str) {
+    debugText = str;
+    let div = document.getElementById("debugText");
+    div.innerHTML = debugText;
+}
 
 ////////////////////////////////////////////////////////////////////
 // Tree Traversal
@@ -85,10 +119,16 @@ function WorldTickCallback(gs, input, deltaTime) {
     */
     // Analyse tree
     
-	let shapesToClear = gs.FindAllByTag(TAG_BOXES);
-	for (let i = 0; i < shapesToClear.length; ++i) {
-		shapesToClear[i].colour = COLOUR_BOX_DEFAULT;
-	}
+	let boxes = gs.FindAllByTag(TAG_BOXES);
+	for (let i = 0; i < boxes.length; ++i) {
+        boxes[i].colour = COLOUR_BOX_DEFAULT;
+        boxes[i].depth = 75;
+    }
+    let outlines = gs.FindAllByTag(TAG_BVH_OUTLINE);
+    for (let i = 0; i < outlines.length; ++i) {
+        outlines[i].colour = COLOUR_BVH_DEFAULT;
+        outlines[i].depth = 50;
+    }
     let overlaps = [];
     let visits = [];
     
@@ -124,8 +164,14 @@ function WorldTickCallback(gs, input, deltaTime) {
     if (gs.bvh.nextNodeId > 0) {
         percentage = Math.round(visits.length / (gs.bvh.nextNodeId) * 100);
     }
-    console.log(`Of ${shapesToClear.length} shapes: Over ${overlaps.length}: visited ${visits.length} of ${gs.bvh.nextNodeId} nodes (${percentage}%)`);
-    //console.log(`Of ${shapesToClear.length} shapes: Over ${overlaps.join(", ")} visited ${visits.length} (${percentage}%)`);
+    let ratio = visits.length / boxes.length * 100;
+    ratio = Math.round(ratio) / 100;
+    let output = `Of ${boxes.length} shapes:`
+    output += `Over ${overlaps.length}: `
+    output += `visited ${visits.length} of ${gs.bvh.nextNodeId} nodes `
+    output += `(${percentage}%) - ratio ${ratio}`;
+    SetDebugText(output);
+    //console.log(`Of ${boxes.length} shapes: Over ${overlaps.join(", ")} visited ${visits.length} (${percentage}%)`);
     //console.log(`nodes: ${visits.join(", ")}`);
 	for (let i = 0; i < overlaps.length; ++i) {
 		let id = overlaps[i];
@@ -136,7 +182,15 @@ function WorldTickCallback(gs, input, deltaTime) {
 		}
 		shape.colour = COLOUR_BOX_OVERLAP;
     }
-    
+    for (let i = 0; i < visits.length; ++i) {
+        let outline = gs.FindEntByExternalId(visits[i]);
+        if (outline === null) {
+            console.log(`No Node ${visits[i]} found!`);
+            continue;
+        }
+        outline.colour = COLOUR_BVH_OVERLAP;
+        outlines[i].depth = 0;
+    }
 }
 
 function GraphTickCallback(gs, input, deltaTime) {
@@ -162,9 +216,21 @@ function Box2AABB(box) {
     };
 }
 
+////////////////////////////////////////////////////////////////////
+// Build Tree
+////////////////////////////////////////////////////////////////////
+function ClearScene() {
+    world.RemoveAllByTag(TAG_BOXES);
+    RebuildTree();
+}
+
+function RebuildTree() {
+    CreateBvhForShapes(world);
+    world.dirty = true;
+}
+
 function Foo(bvh, queryNode, newNode) {
     if (queryNode.IsLeaf()) {
-        console.log(`BVH Creating new branch`);
         // split into branch and append leaves
         // queryNode becomes a branch
         // append copy of queryNode + new node as leaves
@@ -183,7 +249,6 @@ function Foo(bvh, queryNode, newNode) {
         // test whether left or right would be better to continue down
         let scoreLeft = CompareAABBs(queryNode.left.aabb, newNode.aabb);
         let scoreRight = CompareAABBs(queryNode.right.aabb, newNode.aabb);
-        console.log(`Choosing next node ${scoreLeft} vs ${scoreRight}`);
         if (scoreLeft < scoreRight) {
             Foo(bvh, queryNode.left, newNode);
         } else {
@@ -192,11 +257,23 @@ function Foo(bvh, queryNode, newNode) {
     }
 }
 
+function Shuffle(a) {
+    let i, j, x;
+    for (i = a.length - 1; i > 0; --i) {
+        const j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+}
+
 function AutoBuildBvh(gs) {
     let shapes = gs.FindAllByTag(TAG_BOXES);
+    // Shuffle shapes to rearrange insertion order
+    // (improves tree balance)
+    Shuffle(shapes);
     let bvh = new Bvh();
     let numShapes = shapes.length;
-    console.log(`Root: ${bvh.root}`);
     for (let i = 0; i < numShapes; ++i) {
         let shape = shapes[i];
         let node = new BvhNode();
@@ -204,7 +281,6 @@ function AutoBuildBvh(gs) {
         node.aabb = shape.ToAABB();
         node.userData = shape.id;
         if (bvh.root === null) {
-            console.log(`Bvh: Create root`);
             bvh.root = node;
             continue;
         }
@@ -212,9 +288,6 @@ function AutoBuildBvh(gs) {
         let queryNode = bvh.root;
         // Explore tree until a node to split is found
         Foo(bvh, queryNode, node);
-
-        //let leftScore = DiffNodes(bvh.root.left, node);
-        //let rightScore = DiffNodes(bvh.root.right, node);
     }
     return bvh;
 }
@@ -296,17 +369,20 @@ function CreateBvhForShapes(gs) {
     gs.bvh = AutoBuildBvh(gs);
     
     if (gs.bvh.root === null) {
-        return bvh;
+        return gs.bvh;
     }
+
     let numNodes = 0;
+    // Build display outlines
     RecursiveWalk(gs.bvh.root, (node) => {
         //let a = x.aabb;
         //console.log(`Draw node min ${a.minX}, ${a.minY} max ${a.maxX}, ${a.maxY}`);
         let hw = (node.aabb.maxX - node.aabb.minX) / 2;
         let hh = (node.aabb.maxY - node.aabb.minY) / 2;
         let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
+        outline.externalId = node.id;
         outline.tag = TAG_BVH_OUTLINE;
-        console.log(`Outline for node ${node.id}`);
+        //console.log(`Outline for node ${node.id}`);
         // gs.AddCircle(node.aabb.minX + hw, node.aabb.minY + hh, hw, '#ffff00');
         numNodes++;
     });
@@ -329,7 +405,7 @@ function CreateBvhForShapes(gs) {
 // Create a bunch of boxes around for which the BVH will be constructed
 function BuildWorld(canvasElementId) {
 	let gs = new CreateEngineInstance(canvasElementId, WorldTickCallback);
-	gs.CreateGrid();
+	//gs.CreateGrid(100);
     gs.Start(20);
     gs.bvh = new Bvh();
 
@@ -395,10 +471,8 @@ function BuildGraph(canvasElementId) {
     return gs;
 }
 
-let gs1 = BuildWorld("canvas");
-let gs2 = BuildGraph("canvas2");
-
-//let bvh = TreeTest(gs1);
+let world = BuildWorld("canvas");
+let graph = BuildGraph("canvas2");
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////

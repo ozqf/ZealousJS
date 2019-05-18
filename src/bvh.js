@@ -10,7 +10,6 @@ function CopyAABB(original, copy) {
 
 function CalcAABBVolume(aabb) {
     let volume = (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY);
-    console.log(`volume ${volume}`);
     return volume;
 }
 

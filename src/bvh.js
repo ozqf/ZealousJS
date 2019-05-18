@@ -1,3 +1,54 @@
+////////////////////////////////////////////////////////////////////
+// Utility functions
+////////////////////////////////////////////////////////////////////
+function CopyAABB(original, copy) {
+    copy.minX = original.minX;
+    copy.minY = original.minY;
+    copy.maxX = original.maxX;
+    copy.maxY = original.maxY;
+}
+
+function CalcAABBVolume(aabb) {
+    return (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY);
+}
+
+function OverlapAABBs(a, b) {
+    if ((a.minX <= b.maxX && a.minY <= b.minY)
+        &&
+        (a.maxX >= b.minX && a.maxY >= b.minY))
+        { return true; }
+    return false;
+}
+
+function CompareAABBs(a, b) {
+    if (!OverlapAABBs(a, b)) { return -1; }
+    let combination = BvhCombineAABBs(a, b);
+    return CalcAABBVolume(combination);
+}
+
+// converts a pos + halfSize obj
+// to min/max extents
+function Box2AABB(box) {
+    return {
+        minX: box.pos.x - box.halfWidth,
+        minY: box.pos.y - box.halfHeight,
+        maxX: box.pos.x + box.halfWidth,
+        maxY: box.pos.y + box.halfHeight
+    };
+}
+
+function BvhCombineAABBs(a, b) {
+    return {
+        minX: Math.min(a.minX, b.minX),
+        minY: Math.min(a.minY, b.minY),
+        maxX: Math.max(a.maxX, b.maxX),
+        maxY: Math.max(a.maxY, b.maxY)
+    };
+}
+
+////////////////////////////////////////////////////////////////////
+// Classes
+////////////////////////////////////////////////////////////////////
 function BvhNode() {
     // AABB Should be inflated for leaves
     // (actual, moving objects)
@@ -8,7 +59,7 @@ function BvhNode() {
     // If a right is present, this is a branch
     this.right = null;
     this.IsLeaf = function() {
-        return (this.right === null);
+        return (this.left === null && this.right === null);
     };
 	this.VsPoint = (x, y) => {
 		if (x < this.aabb.minX || x > this.aabb.maxX) { return false; }
@@ -20,19 +71,10 @@ function BvhNode() {
 	// here would be consistent.
     this.userData = null;
 }
-// convert box draw obj to bvh aabb
-function Box2AABB(box) {
-    return {
-        minX: box.pos.x - box.halfWidth,
-        minY: box.pos.y - box.halfHeight,
-        maxX: box.pos.x + box.halfWidth,
-        maxY: box.pos.y + box.halfHeight
-    };
-}
 
 function Bvh() {
-    let root = null;
-
+    this.root = null;
+    this.nextNodeId = 1;
     // Purely for debugging!
     this.nodes = [];
 
@@ -46,13 +88,4 @@ function Bvh() {
             return;
         }
     }*/
-}
-
-function BvhCombineAABBs(a, b) {
-    return {
-        minX: Math.min(a.minX, b.minX),
-        minY: Math.min(a.minY, b.minY),
-        maxX: Math.max(a.maxX, b.maxX),
-        maxY: Math.max(a.maxY, b.maxY)
-    };
 }

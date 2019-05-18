@@ -23,8 +23,9 @@
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 
-const SHAPES_TAG = 1;
-const BVH_OUTLINE_TAG = 2;
+const TAG_BOXES = 1;
+const TAG_BVH_OUTLINE = 2;
+const TAG_CURSOR_BOX = 3;
 
 const COLOUR_BOX_DEFAULT = "#ff0000";
 const COLOUR_BOX_OVERLAP = "#00ffff";
@@ -56,8 +57,27 @@ function WorldTickCallback(gs, deltaTime) {
 	if (cursor) {
 		cursor.pos.x = gs.cursorPos.x;
 		cursor.pos.y = gs.cursorPos.y;
-	}
-	let shapesToClear = gs.FindAllByTag(SHAPES_TAG);
+    }
+
+    // Check raw AABB
+    let aabb = cursor.ToAABB();
+    let shapes = gs.FindAllByTag(TAG_BOXES);
+    let len = shapes.length;
+    let box;
+    if (len === 0) {
+        box = gs.AddBox(128, 128, 32, 32, COLOUR_BOX_DEFAULT);
+        box.tag = TAG_BOXES;
+        len = 1;
+    }
+    else { box = shapes[0]; }
+    let boxAABB = box.ToAABB();
+    if (OverlapAABBs(aabb, boxAABB)) {
+        console.log(`OVERLAP!`);
+    }
+    
+    // Analyse tree
+    /*
+	let shapesToClear = gs.FindAllByTag(TAG_BOXES);
 	for (let i = 0; i < shapesToClear.length; ++i) {
 		shapesToClear[i].colour = COLOUR_BOX_DEFAULT;
 	}
@@ -75,7 +95,7 @@ function WorldTickCallback(gs, deltaTime) {
 	PointTest(gs.cursorPos.x, gs.cursorPos.y, bvh.root, (node) => {
 		overlaps.push(node.userData);
     });
-    console.log(`Over ${overlaps.join(", ")} visited ${visits.join(", ")}`);
+    console.log(`Over ${overlaps.join(", ")} visited ${visits.length} nodes: ${visits.join(", ")}`);
 	for (let i = 0; i < overlaps.length; ++i) {
 		let id = overlaps[i];
 		let shape = gs.FindEntById(id);
@@ -84,7 +104,8 @@ function WorldTickCallback(gs, deltaTime) {
 			continue;
 		}
 		shape.colour = COLOUR_BOX_OVERLAP;
-	}
+    }
+    */
 }
 
 function GraphTickCallback(gs, deltaTime) {
@@ -129,8 +150,8 @@ function Foo(bvh, queryNode, newNode) {
         // enlarge to include the new shape!
         queryNode.aabb = BvhCombineAABBs(queryNode.aabb, newNode.aabb);
         // test whether left or right would be better to continue down
-        let scoreLeft = CompareAABBs(queryNode.left, newNode);
-        let scoreRight = CompareAABBs(queryNode.right, newNode);
+        let scoreLeft = CompareAABBs(queryNode.left.aabb, newNode.aabb);
+        let scoreRight = CompareAABBs(queryNode.right.aabb, newNode.aabb);
         console.log(`Choosing next node ${scoreLeft} vs ${scoreRight}`);
         if (scoreLeft > scoreRight) {
             Foo(bvh, queryNode.left, newNode);
@@ -141,7 +162,7 @@ function Foo(bvh, queryNode, newNode) {
 }
 
 function AutoBuildBvh(gs) {
-    let shapes = gs.FindAllByTag(SHAPES_TAG);
+    let shapes = gs.FindAllByTag(TAG_BOXES);
     let bvh = new Bvh();
     let numShapes = shapes.length;
     console.log(`Root: ${bvh.root}`);
@@ -172,6 +193,15 @@ function HandBuildBvh(gs) {
                /   \
              /       \
             2         3
+    */
+    /*
+                 1
+               /   \
+             /       \
+            2         3
+           / \
+          /   \
+         4     5
     */
     /*
                  1
@@ -225,7 +255,7 @@ function HandBuildBvh(gs) {
 // Setup
 ////////////////////////////////////////////////////////////////////
 function TreeTest(gs) {
-    gs.RemoveAllByTag(BVH_OUTLINE_TAG);
+    gs.RemoveAllByTag(TAG_BVH_OUTLINE);
     // Generate Tree
     //let bvh = HandBuildBvh(gs);2
     let bvh = AutoBuildBvh(gs);
@@ -236,7 +266,7 @@ function TreeTest(gs) {
         let hw = (node.aabb.maxX - node.aabb.minX) / 2;
         let hh = (node.aabb.maxY - node.aabb.minY) / 2;
         let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
-        outline.tag = BVH_OUTLINE_TAG;
+        outline.tag = TAG_BVH_OUTLINE;
         console.log(`Outline for node ${node.id}`);
         // gs.AddCircle(node.aabb.minX + hw, node.aabb.minY + hh, hw, '#ffff00');
         numNodes++;
@@ -264,42 +294,52 @@ function BuildWorld(canvasElementId) {
 	gs.CreateGrid();
 	gs.Start(20);
 
-	let canvas = document.getElementById(canvasElementId);
-
+    let canvas = document.getElementById(canvasElementId);
     // Create Some boxes to build a tree around:
-	let min = new V2(0, 0);
-    let max = new V2(canvas.width, canvas.height);
-    let shapes = [
-        { x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 },
-        { x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 },
-        //{ x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 },
-        //{ x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 },
-    ];
-	let numShapes = shapes.length;
-	//let numShapes = 4;
-    //let padding = gs.pix2metre;
     let colour = '#ff0000';
-	for (let i = 0; i < numShapes; ++i) {
-        let box = gs.AddBox(
-            shapes[i].x,
-            shapes[i].y,
-            shapes[i].hw,
-            shapes[i].hh,
-            colour);
-        box.tag = SHAPES_TAG;
-		console.log(`Add shape ${box.id}`);
-		/*let halfWidth = RandomRange(16, 48);
-		let halfHeight = RandomRange(16, 48);
-		let x = RandomRange(
-			min.x + (halfWidth + padding),
-			max.x - (halfWidth + padding));
-		let y = RandomRange(
-			min.y + (halfHeight + padding),
-			max.y - (halfHeight + padding));
-        gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
-        */
+    const randomised = true;
+    if (randomised)
+    {
+        let min = new V2(0, 0);
+        let max = new V2(canvas.width, canvas.height);
+        let numShapes = 1;
+        let padding = gs.pix2metre;
+	    for (let i = 0; i < numShapes; ++i) {
+	    	let halfWidth = RandomRange(16, 48);
+	    	let halfHeight = RandomRange(16, 48);
+	    	let x = RandomRange(
+	    		min.x + (halfWidth + padding),
+	    		max.x - (halfWidth + padding));
+	    	let y = RandomRange(
+	    		min.y + (halfHeight + padding),
+	    		max.y - (halfHeight + padding));
+            let box = gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
+            box.tag = TAG_BOXES;
+            console.log(`Add shape ${box.id}`);
+        }   
     }
-	let cursor = gs.AddCircle(0, 0, 4, '#00ffff');
+    else
+    {
+        let shapes = [
+            { x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 },
+            { x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 },
+            { x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 },
+            { x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 },
+        ];
+        let numShapes = shapes.length;
+	    for (let i = 0; i < numShapes; ++i) {
+            let box = gs.AddBox(
+                shapes[i].x,
+                shapes[i].y,
+                shapes[i].hw,
+                shapes[i].hh,
+                colour);
+            box.tag = TAG_BOXES;
+	    	console.log(`Add shape ${box.id}`);
+        }
+    }
+    
+	let cursor = gs.AddCircle(0, 0, 8, '#00ffff');
 	cursorId = cursor.id;
     // init a player object for giggles
 	//let plyr = gs.AddBox(
@@ -319,7 +359,7 @@ function BuildGraph(canvasElementId) {
 let gs1 = BuildWorld("canvas");
 let gs2 = BuildGraph("canvas2");
 
-let bvh = TreeTest(gs1);
+//let bvh = TreeTest(gs1);
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////

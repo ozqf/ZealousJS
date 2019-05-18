@@ -13,10 +13,34 @@ function CalcAABBVolume(aabb) {
 }
 
 function OverlapAABBs(a, b) {
-    if ((a.minX <= b.maxX && a.minY <= b.minY)
+    /*
+    let ahw = (a.maxX - a.minX) / 2;
+    let ahh = (a.maxY - a.minY) / 2;
+    let aX = a.minX + ahw;
+    let aY = a.minY + ahh;
+    let bMinX = b.minX - ahw;
+    let bMinY = b.minY - ahh;
+    let bMaxX = b.maxX + ahw;
+    let bMaxY = b.maxY + ahh;
+    if (aX < bMinX) { return false; }
+    if (aX > bMaxX) { return false; }
+    if (aY < bMinY) { return false; }
+    if (aY > bMaxY) { return false; }
+    return true;
+    */
+    /*
+    return (_a2Left.m_vMin.x <= _a2Right.m_vMax.x) && (_a2Left.m_vMin.y <= _a2Right.m_vMax.y)
+    &&
+    (_a2Left.m_vMax.x >= _a2Right.m_vMin.x) && (_a2Left.m_vMax.y >= _a2Right.m_vMin.y);
+    */
+    if ((a.minX <= b.maxX && a.minY <= b.maxY)
         &&
         (a.maxX >= b.minX && a.maxY >= b.minY))
-        { return true; }
+    {
+        //console.log(`aabb overlap`);
+        return true;
+    }
+    //console.log(`No aabb overlap`);
     return false;
 }
 

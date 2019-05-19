@@ -53,12 +53,98 @@ function BvhCombineAABBs(a, b) {
 }
 
 ////////////////////////////////////////////////////////////////////
+// Tree Adjustment
+////////////////////////////////////////////////////////////////////
+function BvhInsert(bvh, queryNode, newNode) {
+    if (queryNode.IsLeaf()) {
+        // split into branch and append leaves
+        // queryNode becomes a branch
+        // append copy of queryNode + new node as leaves
+        let sibling = new BvhNode(bvh, queryNode);
+        sibling.userData = queryNode.userData;
+        queryNode.userData = null;
+        CopyAABB(queryNode.aabb, sibling.aabb);
+        queryNode.aabb = BvhCombineAABBs(sibling.aabb, newNode.aabb);
+        queryNode.left = sibling;
+        queryNode.right = newNode;
+        newNode.parent = queryNode;
+        let newDepth = queryNode.depth + 1;
+        queryNode.left.depth = newDepth;
+        queryNode.right.depth = newDepth;
+        if (bvh.depth < newDepth) { bvh.depth = newDepth;}
+    } else {
+        // regardless of which child the shape is appended to we must
+        // enlarge to include the new shape!
+        queryNode.aabb = BvhCombineAABBs(queryNode.aabb, newNode.aabb);
+        // test whether left or right would be better to continue down
+        let scoreLeft = CompareAABBs(queryNode.left.aabb, newNode.aabb);
+        let scoreRight = CompareAABBs(queryNode.right.aabb, newNode.aabb);
+        if (scoreLeft < scoreRight) {
+            BvhInsert(bvh, queryNode.left, newNode);
+        } else {
+            BvhInsert(bvh, queryNode.right, newNode);
+        }
+    }
+}
+
+function BvhRemove(bvh, node) {
+    /*
+    > Find sibling on parent of node
+    > Convert parent to sibling, clear links
+    */
+   let parent = node.parent;
+   if (parent === null) {
+        console.log(`Removing root node`);
+        // must be the root!
+        bvh.root = null;
+        bvh.nextNodeId = 0;
+        bvh.depth = 0;
+        return;
+   }
+   console.log(`Collapsing branch (parent ${node.parent.id})`);
+   
+   let sibling;
+   if (parent.left === node) { sibling = parent.right; }
+   else if (parent.right === node) { sibling = parent.left; }
+   else { console.error(`Deleting node - corrupted parent ref`); return; }
+   // Copy sibling onto parent
+   parent.aabb = sibling.aabb;
+   parent.userData = sibling.userData;
+   parent.left = null;
+   parent.right = null;
+   
+}
+
+////////////////////////////////////////////////////////////////////
+// Tree Traversal
+////////////////////////////////////////////////////////////////////
+function RecursivePointTest(x, y, node, callback) {
+    //console.log(`Point test node ${node.id}`);
+	if (!node.VsPoint(x, y)) { return; }
+	if (!node.left || !node.right) { callback(node); return; }
+	RecursivePointTest(x, y, node.left, callback);
+	RecursivePointTest(x, y, node.right, callback);
+}
+
+function RecursiveWalk(node, callback) {
+    callback(node);
+    if (node.left) { RecursiveWalk(node.left, callback); }
+    if (node.right) { RecursiveWalk(node.right, callback); }
+}
+
+
+
+////////////////////////////////////////////////////////////////////
 // Classes
 ////////////////////////////////////////////////////////////////////
-function BvhNode() {
+function BvhNode(bvh, parentNode) {
+    this.parent = parentNode;
+    this.id = ++bvh.nextNodeId;
+    console.log(`Created node ${this.id}`);
     // AABB Should be inflated for leaves
     // (actual, moving objects)
     // bounding box for branches
+    this.depth = 0;
     this.aabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
     // Left should always be occupied..?
     this.left = null;
@@ -81,17 +167,10 @@ function BvhNode() {
 function Bvh() {
     this.root = null;
     this.nextNodeId = 0;
-    // Purely for debugging!
-    this.nodes = [];
-
-    /*this.Insert = function(box) {
-        let node = new BvhNode();
-        node.aabb = Box2AABB(box);
-        node.userData = box;
-        this.nodes.push(node);
-        if (root === null) {
-            root = node;
-            return;
-        }
-    }*/
+    this.depth = 0;
+    this.Clear = () => {
+        this.root = null;
+        this.nextNodeId = 0;
+        this.depth = 0;
+    };
 }

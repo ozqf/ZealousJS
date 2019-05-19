@@ -23,9 +23,11 @@
             <div class="row">
                 <button onclick="RebuildTree()">Rebuild</button>
                 <button onclick="ClearScene()">Clear</button>
+                <div id="treeStats"></div>
                 <div id="debugText"></div>
             </div>
             <canvas
+                oncontextmenu="return false"
                 id="canvas"
                 class="world-canvas"
                 width="550px"
@@ -47,9 +49,13 @@
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 
+// WORLD TAGS
 const TAG_BOXES = 1;
 const TAG_BVH_OUTLINE = 2;
 const TAG_CURSOR_BOX = 3;
+
+// GRAPH TAGS
+const TAG_GRAPH_NODE = 1;
 
 const COLOUR_BOX_DEFAULT = "#ff0000ff";
 const COLOUR_BOX_OVERLAP = "#00ffffff";
@@ -58,144 +64,13 @@ const COLOUR_BVH_DEFAULT = "#999999ff";
 const COLOUR_BVH_OVERLAP = "#ffff00ff";
 
 let cursorId = -1;
+let treeStats = "";
 let debugText = "";
+let peakVisits = 0;
 
 ////////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////////
-function SetDebugText(str) {
-    debugText = str;
-    let div = document.getElementById("debugText");
-    div.innerHTML = debugText;
-}
-
-////////////////////////////////////////////////////////////////////
-// Tree Traversal
-////////////////////////////////////////////////////////////////////
-function RecursivePointTest(x, y, node, callback) {
-    //console.log(`Point test node ${node.id}`);
-	if (!node.VsPoint(x, y)) { return; }
-	if (!node.left || !node.right) { callback(node); return; }
-	RecursivePointTest(x, y, node.left, callback);
-	RecursivePointTest(x, y, node.right, callback);
-}
-
-function RecursiveWalk(node, callback) {
-    callback(node);
-    if (node.left) { RecursiveWalk(node.left, callback); }
-    if (node.right) { RecursiveWalk(node.right, callback); }
-}
-
-function WorldTickCallback(gs, input, deltaTime) {
-    let cursor = gs.FindEntById(cursorId);
-	if (cursor) {
-		cursor.pos.x = gs.cursorPos.x;
-		cursor.pos.y = gs.cursorPos.y;
-    }
-
-    if (input.mouseOneClick) {
-        // Add shape, rebuild tree
-        let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
-        box.tag = TAG_BOXES;
-        CreateBvhForShapes(gs);
-    }
-
-    // Check raw AABB vs first shape
-    /*
-    let aabb = cursor.ToAABB();
-    let shapes = gs.FindAllByTag(TAG_BOXES);
-    let len = shapes.length;
-    let box;
-    if (len === 0) {
-        box = gs.AddBox(128, 128, 32, 32, COLOUR_BOX_DEFAULT);
-        box.tag = TAG_BOXES;
-        len = 1;
-    }
-    else { box = shapes[0]; }
-    let boxAABB = box.ToAABB();
-    if (OverlapAABBs(aabb, boxAABB)) {
-        console.log(`OVERLAP!`);
-    }
-    */
-    // Analyse tree
-    
-	let boxes = gs.FindAllByTag(TAG_BOXES);
-	for (let i = 0; i < boxes.length; ++i) {
-        boxes[i].colour = COLOUR_BOX_DEFAULT;
-        boxes[i].depth = 75;
-    }
-    let outlines = gs.FindAllByTag(TAG_BVH_OUTLINE);
-    for (let i = 0; i < outlines.length; ++i) {
-        outlines[i].colour = COLOUR_BVH_DEFAULT;
-        outlines[i].depth = 50;
-    }
-    let overlaps = [];
-    let visits = [];
-    
-    let PointTestVisit = (x, y, node, callback) => {
-        visits.push(node.id);
-        //if (!node.VsPoint(x, y)) { return false; }
-        if (!node.left || !node.right) { callback(node); return true; }
-        if (node.left.VsPoint(x, y)) {
-            PointTestVisit(x, y, node.left, callback);
-        }
-        if (node.right.VsPoint(x, y)) {
-            PointTestVisit(x, y, node.right, callback);
-        }
-        //PointTest(x, y, node.left, callback);
-        //PointTest(x, y, node.right, callback);
-        return true;
-    };
-    let x = gs.cursorPos.x, y = gs.cursorPos.y;
-    if (gs.bvh.root !== null) {
-        if (gs.bvh.root.VsPoint(x, y)) {
-            PointTestVisit(x, y, gs.bvh.root, (node) => {
-            overlaps.push(node.userData);
-            });
-        }
-        //PointTest(gs.cursorPos.x, gs.cursorPos.y, gs.bvh.root, (node) => {
-	    //	overlaps.push(node.userData);
-        //});
-    }
-    else {
-        console.log(`Tree has no root`);
-    }
-    let percentage = 0;
-    if (gs.bvh.nextNodeId > 0) {
-        percentage = Math.round(visits.length / (gs.bvh.nextNodeId) * 100);
-    }
-    let ratio = visits.length / boxes.length * 100;
-    ratio = Math.round(ratio) / 100;
-    let output = `Of ${boxes.length} shapes:`
-    output += `Over ${overlaps.length}: `
-    output += `visited ${visits.length} of ${gs.bvh.nextNodeId} nodes `
-    output += `(${percentage}%) - ratio ${ratio}`;
-    SetDebugText(output);
-    //console.log(`Of ${boxes.length} shapes: Over ${overlaps.join(", ")} visited ${visits.length} (${percentage}%)`);
-    //console.log(`nodes: ${visits.join(", ")}`);
-	for (let i = 0; i < overlaps.length; ++i) {
-		let id = overlaps[i];
-		let shape = gs.FindEntById(id);
-		if (shape === null) {
-			console.log(`No shape ${id}!`);
-			continue;
-		}
-		shape.colour = COLOUR_BOX_OVERLAP;
-    }
-    for (let i = 0; i < visits.length; ++i) {
-        let outline = gs.FindEntByExternalId(visits[i]);
-        if (outline === null) {
-            console.log(`No Node ${visits[i]} found!`);
-            continue;
-        }
-        outline.colour = COLOUR_BVH_OVERLAP;
-        outlines[i].depth = 0;
-    }
-}
-
-function GraphTickCallback(gs, input, deltaTime) {
-}
-
 function AddBvhOutline(gs, node) {
     let pad = gs.pix2metre / 2;
 
@@ -216,6 +91,146 @@ function Box2AABB(box) {
     };
 }
 
+function SetDebugText(str) {
+    debugText = str;
+    let div = document.getElementById("debugText");
+    div.innerHTML = debugText;
+}
+
+function SetTreeStats(str) {
+    treeStats = str;
+    let div = document.getElementById("treeStats");
+    div.innerHTML = treeStats;
+}
+
+////////////////////////////////////////////////////////////////////
+// Frame loop
+////////////////////////////////////////////////////////////////////
+function WorldTickCallback(gs, input, deltaTime) {
+    let cursor = gs.FindEntById(cursorId);
+	if (cursor) {
+		cursor.pos.x = gs.cursorPos.x;
+		cursor.pos.y = gs.cursorPos.y;
+    }
+    // Check raw AABB vs first shape
+    /*
+    let aabb = cursor.ToAABB();
+    let shapes = gs.FindAllByTag(TAG_BOXES);
+    let len = shapes.length;
+    let box;
+    if (len === 0) {
+        box = gs.AddBox(128, 128, 32, 32, COLOUR_BOX_DEFAULT);
+        box.tag = TAG_BOXES;
+        len = 1;
+    }
+    else { box = shapes[0]; }
+    let boxAABB = box.ToAABB();
+    if (OverlapAABBs(aabb, boxAABB)) {
+        console.log(`OVERLAP!`);
+    }
+    */
+    // Analyse tree
+    
+    // Clear colours
+	let boxes = gs.FindAllByTag(TAG_BOXES);
+	for (let i = 0; i < boxes.length; ++i) {
+        boxes[i].colour = COLOUR_BOX_DEFAULT;
+        boxes[i].depth = 75;
+    }
+    let outlines = gs.FindAllByTag(TAG_BVH_OUTLINE);
+    for (let i = 0; i < outlines.length; ++i) {
+        outlines[i].colour = COLOUR_BVH_DEFAULT;
+        outlines[i].depth = 50;
+    }
+
+    // Gather scan information
+    let overlaps = [];
+    let visits = [];
+    
+    let PointTestVisit = (x, y, node, callback) => {
+        visits.push(node.id);
+        //if (!node.VsPoint(x, y)) { return false; }
+        if (!node.left || !node.right) { callback(node); return true; }
+        if (node.left.VsPoint(x, y)) {
+            PointTestVisit(x, y, node.left, callback);
+        }
+        if (node.right.VsPoint(x, y)) {
+            PointTestVisit(x, y, node.right, callback);
+        }
+        return true;
+    };
+    let x = gs.cursorPos.x, y = gs.cursorPos.y;
+    if (gs.bvh.root !== null) {
+        if (gs.bvh.root.VsPoint(x, y)) {
+            PointTestVisit(x, y, gs.bvh.root, (node) => {
+            overlaps.push(node);
+            });
+        }
+    }
+    
+    // Gather stats
+    if (visits.length > peakVisits) { peakVisits = visits.length; }
+    let percentage = 0;
+    if (gs.bvh.nextNodeId > 0) {
+        percentage = Math.round(visits.length / (gs.bvh.nextNodeId) * 100);
+    }
+    let ratio = visits.length / boxes.length * 100;
+    ratio = Math.round(ratio) / 100;
+    let output = `Of ${boxes.length} shapes:`
+    output += `Over ${overlaps.length}: `
+    output += `visited ${visits.length} nodes (Peak ${peakVisits})`
+    output += `(${percentage}%) - ratio ${ratio}`;
+    SetDebugText(output);
+	for (let i = 0; i < overlaps.length; ++i) {
+		let id = overlaps[i].userData;
+		let shape = gs.FindEntById(id);
+		if (shape === null) {
+			console.log(`No shape ${id}!`);
+			continue;
+		}
+		shape.colour = COLOUR_BOX_OVERLAP;
+    }
+    for (let i = 0; i < visits.length; ++i) {
+        let outline = gs.FindEntByExternalId(visits[i]);
+        if (outline === null) {
+            console.log(`No Node ${visits[i]} found!`);
+            continue;
+        }
+        outline.colour = COLOUR_BVH_OVERLAP;
+        outlines[i].depth = 0;
+    }
+
+
+
+    // Adjust tree based on input
+    
+    if (input.mouseOneClick) {
+        // Add shape, rebuild tree
+        let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
+        box.tag = TAG_BOXES;
+        RebuildTree();(gs);
+        gs.dirty = true;
+    }
+
+    if (input.mouseTwoClick) {
+        // Add shape, rebuild tree
+        for (let i = overlaps.length - 1; i >= 0; --i) {
+            if (gs.RemoveById(overlaps[i].userData)) {
+                BvhRemove(gs.bvh, overlaps[i]);
+            }
+        }
+        DrawBvh(gs, gs.bvh);
+        gs.dirty = true;
+        //let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
+        //box.tag = TAG_BOXES;
+        //RebuildTree();(gs);
+    }
+
+}
+
+function GraphTickCallback(gs, input, deltaTime) {
+}
+
 ////////////////////////////////////////////////////////////////////
 // Build Tree
 ////////////////////////////////////////////////////////////////////
@@ -225,38 +240,13 @@ function ClearScene() {
 }
 
 function RebuildTree() {
-    CreateBvhForShapes(world);
+    world.bvh = AutoBuildBvh(world);
+    DrawBvh(world, world.bvh);
     world.dirty = true;
 }
 
-function Foo(bvh, queryNode, newNode) {
-    if (queryNode.IsLeaf()) {
-        // split into branch and append leaves
-        // queryNode becomes a branch
-        // append copy of queryNode + new node as leaves
-        let sibling = new BvhNode();
-        sibling.id = bvh.nextNodeId++;
-        sibling.userData = queryNode.userData;
-        queryNode.userData = null;
-        CopyAABB(queryNode.aabb, sibling.aabb);
-        queryNode.aabb = BvhCombineAABBs(sibling.aabb, newNode.aabb);
-        queryNode.left = sibling;
-        queryNode.right = newNode;
-    } else {
-        // regardless of which child the shape is appended to we must
-        // enlarge to include the new shape!
-        queryNode.aabb = BvhCombineAABBs(queryNode.aabb, newNode.aabb);
-        // test whether left or right would be better to continue down
-        let scoreLeft = CompareAABBs(queryNode.left.aabb, newNode.aabb);
-        let scoreRight = CompareAABBs(queryNode.right.aabb, newNode.aabb);
-        if (scoreLeft < scoreRight) {
-            Foo(bvh, queryNode.left, newNode);
-        } else {
-            Foo(bvh, queryNode.right, newNode);
-        }
-    }
-}
-
+// Recommended as the best thing to do for
+// insert performance!
 function Shuffle(a) {
     let i, j, x;
     for (i = a.length - 1; i > 0; --i) {
@@ -267,143 +257,75 @@ function Shuffle(a) {
     }
 }
 
+// Attempting to sort by some measure and see if that helps tree
+// construction - actually makes things worse...?
+function SortShapes(shapes) {
+    shapes.sort((a, b) => {
+        return a.pos.Mag() - b.pos.Mag();
+        //return b.pos.Mag() - a.pos.Mag();
+    });
+}
+
 function AutoBuildBvh(gs) {
+    gs.bvh.Clear();
+    peakVisits = 0;
     let shapes = gs.FindAllByTag(TAG_BOXES);
     // Shuffle shapes to rearrange insertion order
     // (improves tree balance)
     Shuffle(shapes);
+    //SortShapes(shapes);
     let bvh = new Bvh();
     let numShapes = shapes.length;
     for (let i = 0; i < numShapes; ++i) {
         let shape = shapes[i];
-        let node = new BvhNode();
-        node.id = bvh.nextNodeId++;
+        let node = new BvhNode(bvh, null);
         node.aabb = shape.ToAABB();
         node.userData = shape.id;
         if (bvh.root === null) {
             bvh.root = node;
+            node.depth = 1;
             continue;
         }
 
         let queryNode = bvh.root;
         // Explore tree until a node to split is found
-        Foo(bvh, queryNode, node);
+        BvhInsert(bvh, queryNode, node);
     }
-    return bvh;
-}
-
-function HandBuildBvh(gs) {
-    //let boxes = gs.GetBoxList();
-    //console.log(`Build BVH for ${boxes.length} AABBs`);
-    let nodes = [];
-    /*
-                 1
-               /   \
-             /       \
-            2         3
-    */
-    /*
-                 1
-               /   \
-             /       \
-            2         3
-           / \
-          /   \
-         4     5
-    */
-    /*
-                 1
-               /   \
-             /       \
-            2         3
-           / \       / \
-          /   \     /   \
-         4     5   6     7
-    */
-    
-	let one = new BvhNode();
-	let two = new BvhNode();
-	let three = new BvhNode();
-    let four = new BvhNode();
-    let five = new BvhNode();
-    let six = new BvhNode();
-    let seven = new BvhNode();
-	let eight = new BvhNode();
-	let nine = new BvhNode();
-	// Bottom
-    four.aabb = Box2AABB({ x: 131.7, y: 167.1, hw: 23.0, hh: 22.0 });
-    five.aabb = Box2AABB({ x: 180.4, y: 187.1, hw: 46.5, hh: 46.0 });
-    six.aabb = Box2AABB({ x: 275.5, y: 148.4, hw: 39.7, hh: 43.3 });
-    seven.aabb = Box2AABB({ x: 464.8, y: 100.4, hw: 17.7, hh: 46.0 });
-	four.userData = 28;
-	five.userData = 29;
-	six.userData = 30;
-	seven.userData = 31;
-	//four.userData = { shapeId: 28, outlineId: };
-	
-	two.aabb = BvhCombineAABBs(four.aabb, five.aabb);
-	three.aabb = BvhCombineAABBs(six.aabb, seven.aabb);
-	one.aabb = BvhCombineAABBs(two.aabb, three.aabb);
-	// Link
-	two.left = four;
-	two.right = five;
-	three.left = six;
-	three.right = seven;
-	one.left = two;
-	one.right = three;
-	
-    let bvh = new Bvh();
-    bvh.root = one;
-    bvh.nodes = nodes;
-    console.log(`Hand built ${bvh.nodes.length} nodes`);
+    let numNodes = numShapes + (numShapes - 1);
+    // gs.bvh.nextNodeId
+    let stats = `BVH Stats: ${numShapes} shapes, `;
+    stats += `${gs.bvh.nextNodeId} nodes (expected ${numNodes}), ${bvh.depth} height`;
+    SetTreeStats(stats);
     return bvh;
 }
 
 ////////////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////////////
-function CreateBvhForShapes(gs) {
+function DrawBvh(gs, bvh) {
     gs.RemoveAllByTag(TAG_BVH_OUTLINE);
-    // Generate Tree
-    //let bvh = HandBuildBvh(gs);2
-    gs.bvh = AutoBuildBvh(gs);
-    
-    if (gs.bvh.root === null) {
-        return gs.bvh;
-    }
-
     let numNodes = 0;
     // Build display outlines
-    RecursiveWalk(gs.bvh.root, (node) => {
-        //let a = x.aabb;
-        //console.log(`Draw node min ${a.minX}, ${a.minY} max ${a.maxX}, ${a.maxY}`);
-        let hw = (node.aabb.maxX - node.aabb.minX) / 2;
-        let hh = (node.aabb.maxY - node.aabb.minY) / 2;
-        let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
-        outline.externalId = node.id;
-        outline.tag = TAG_BVH_OUTLINE;
-        //console.log(`Outline for node ${node.id}`);
-        // gs.AddCircle(node.aabb.minX + hw, node.aabb.minY + hh, hw, '#ffff00');
-        numNodes++;
-    });
-    /*
-    // Draw outlines over nodes.
-    let numNodes = bvh.nodes.length;
-    
-    // Draw nodes
-    for (let i = 0; i < numNodes; ++i) {
-        let node = bvh.nodes[i];
-        let hw = (node.aabb.maxX - node.aabb.minX) / 2;
-        let hh = (node.aabb.maxY - node.aabb.minY) / 2;
-        gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
-        gs.AddCircle(node.aabb.minX + hw, node.aabb.minY + hh, hw, '#ffff00');
+    if (gs.bvh.root) {
+        RecursiveWalk(gs.bvh.root, (node) => {
+            let hw = (node.aabb.maxX - node.aabb.minX) / 2;
+            let hh = (node.aabb.maxY - node.aabb.minY) / 2;
+            let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
+            outline.externalId = node.id;
+            outline.tag = TAG_BVH_OUTLINE;
+            numNodes++;
+        });
     }
-    */
-    console.log(`Show ${numNodes} tree nodes`);
+    
+    console.log(`Drawing ${numNodes} tree nodes`);
+}
+
+function CreateGraphForTree(bvh) {
+    if (bvh.root === null) { return; }
 }
 
 // Create a bunch of boxes around for which the BVH will be constructed
-function BuildWorld(canvasElementId) {
+function InitWorld(canvasElementId) {
 	let gs = new CreateEngineInstance(canvasElementId, WorldTickCallback);
 	//gs.CreateGrid(100);
     gs.Start(20);
@@ -464,15 +386,15 @@ function BuildWorld(canvasElementId) {
 }
 
 // Create a canvas scene for displaying the BVH tree as a graph
-function BuildGraph(canvasElementId) {
+function InitGraph(canvasElementId) {
     let gs = new CreateEngineInstance(canvasElementId, GraphTickCallback);
     gs.AddBox(300, 200, 64, 32, '#ffffff');
     gs.Start(2);
     return gs;
 }
 
-let world = BuildWorld("canvas");
-let graph = BuildGraph("canvas2");
+let world = InitWorld("canvas");
+let graph = InitGraph("canvas2");
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////

@@ -3,9 +3,9 @@ Canvas scene and primitives for prototyping
 */
 "use strict";
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 // UTILITY FUNCTIONS
-///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 function RandomRange(min, max) {
 	return (Math.random() * (max - min) + min);
 }
@@ -19,10 +19,10 @@ function V2(newX, newY) {
 	this.x = newX;
 	this.y = newY;
 	this.Radians = function() {
-		return Math.atan2(y, x);
+		return Math.atan2(this.y, this.x);
 	};
 	this.Mag = function() {
-		return Math.sqrt((x * x) + (y * y));
+		return Math.sqrt((this.x * this.x) + (this.y * this.y));
 	};
 }
 
@@ -181,6 +181,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	let shapes = [];
 	let input = {
 		mouseOneClick: false,
+		mouseTwoClick: false,
 		left: false,
 		right: false
 	};
@@ -207,33 +208,41 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);
 		shapes.push(box);
 		return box;
-	}
+	};
 
 	this.AddOutline = function(x, y, halfWidth, halfHeight, colour) {
 		let outline = new OutlineCtor(
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);
 		shapes.push(outline);
 		return outline;
-	}
+	};
 
 	this.AddCircle	= function(x, y, radius, colour) {
 		let circle = new CircleCtor(
 			nextEntityId++, x, y, radius, colour);
 		shapes.push(circle);
 		return circle;
-	}
+	};
 
 	this.AddLine = function(x0, y0, x1, y1, colour) {
 		let line = new LineCtor(
 			nextEntityId++, x0, y0, x1, y1, colour);
 		shapes.push(line);
 		return line;
-	}
+	};
 	
 	////////////////////////////////////////////////////////////
 	// Entity removal
 	////////////////////////////////////////////////////////////
-	this.RemoveAll = () => { shapes = []; }
+	this.RemoveAll = () => { shapes = []; };
+	this.RemoveById = (id) => {
+		for (let i = shapes.length - 1; i >= 0; --i) {
+			if (shapes[i].id !== id) { continue; }
+			shapes.splice(i, 1);
+			return true;
+		}
+		return false;
+	}
 	this.RemoveAllByTag = (tag) => {
 		let count = 0;
 		for (let i = shapes.length - 1; i >= 0; --i) {
@@ -242,7 +251,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 			count++;
 		}
 		return count;
-	}
+	};
 	
 	
 	this.UpdatePlayer = function(id, deltaTime) {
@@ -257,7 +266,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		if (input.right) { avatar.pos.x += (speed * this.pix2metre) * deltaTime; }
 		if (input.up) { avatar.pos.y -= (speed * this.pix2metre) * deltaTime; }
 		if (input.down) { avatar.pos.y += (speed * this.pix2metre) * deltaTime; }
-	}
+	};
 	
 	///////////////////////////////////////////////////////////////////
 	// Frame cycle
@@ -273,8 +282,9 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		this.Draw();
 		// Clear single frame events
 		input.mouseOneClick = false;
+		input.mouseTwoClick = false;
         tick++;
-	}
+	};
 	
     this.Draw = function() {
 		//ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -291,7 +301,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 			let obj = shapes[i];
 			obj.Draw(ctx, camera);
 		}
-	}
+	};
 
 	this.CreateGrid = (depth) => {
 		let minX = 0;
@@ -311,7 +321,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 			line.depth = depth;
 			y += this.pix2metre;
 		}
-	}
+	};
 	
 	///////////////////////////////////////////////////////////////////
 	// Entity Search
@@ -321,14 +331,14 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		for (let i = 0; i < l; ++i) {
 			if (shapes[i].id === id) { return shapes[i]; }
 		} return null;
-	}
+	};
 	
 	this.FindEntByExternalId = function(id) {
 		let l = shapes.length;
 		for (let i = 0; i < l; ++i) {
 			if (shapes[i].externalId === id) { return shapes[i]; }
 		} return null;
-	}
+	};
 	
 	this.FindAllByTag = function(tag) {
 		let results = [];
@@ -338,7 +348,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 			results.push(shapes[i]);
 		}
 		return results;
-	}
+	};
 	
 	///////////////////////////////////////////////////////////////////
 	// Event handlers
@@ -351,7 +361,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		if (k === keys.up) { input.up = true; return; }
 		if (k === keys.down) { input.down = true; return; }
 		else { console.log(`Unused keyCode ${ev.keyCode} Down`); }
-	}
+	};
 	
 	this.HandleKeyUp = function(ev) {
 		//console.log(`Key ${ev.keyCode} up`);
@@ -361,7 +371,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		if (k === keys.up) { input.up = false; return; }
 		if (k === keys.down) { input.down = false; return; }
 		else { console.log(`Unused keyCode ${ev.keyCode} Up`); }
-	}
+	};
 	
 	this.HandleMouseMove = (ev) => {
 		let rect = canvas.getBoundingClientRect();
@@ -369,28 +379,36 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		this.cursorPos.y = ev.clientY - rect.top;
 		this.dirty = true;
 		//return this.cursorPos;
-	}
+	};
 
 	this.HandleGetFocus = function() {
 		console.log(`Get focus`);
-	}
+	};
 
 	this.HandleLoseFocus = function() {
 		console.log(`Lose focus`);
-	}
+	};
 
 	this.HandleMouseDown = (ev) => {
 
-	}
+	};
 	
 	this.HandleMouseUp = (ev) => {
 		
-	}
+	};
 
-	this.handleMouseClick = (ev) => {
+	this.HandleMouseClick = (ev) => {
 		input.mouseOneClick = true;
+		console.log(`Mouse click`);
 		this.dirty = true;
-	}
+		return false;
+	};
+
+	this.HandleContextMenu = (ev) => {
+		input.mouseTwoClick = true;
+		this.dirty = true;
+		return false;
+	};
 	
 	// Attach input listeners
 	// Hack to make canvas element accept keyboard events:
@@ -402,7 +420,8 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	canvas.addEventListener("focusout", this.HandleLoseFocus, true);
 	canvas.addEventListener("focusin", this.HandleGetFocus, true);
 	canvas.addEventListener("mousemove", this.HandleMouseMove, true);
-	canvas.addEventListener("click", this.handleMouseClick, true);
+	canvas.addEventListener("click", this.HandleMouseClick, true);
+	canvas.addEventListener("contextmenu", this.HandleContextMenu, true);
 	
 	///////////////////////////////////////////////////////////////////
 	// Startup

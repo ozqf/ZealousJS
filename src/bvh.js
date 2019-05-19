@@ -78,6 +78,7 @@ function BvhInsert(bvh, queryNode, newNode) {
         queryNode.left.depth = newDepth;
         queryNode.right.depth = newDepth;
         if (bvh.depth < newDepth) { bvh.depth = newDepth;}
+        return newNode;
     } else {
         // regardless of which child the shape is appended to we must
         // enlarge to include the new shape!
@@ -86,9 +87,9 @@ function BvhInsert(bvh, queryNode, newNode) {
         let scoreLeft = CompareAABBs(queryNode.left.aabb, newNode.aabb);
         let scoreRight = CompareAABBs(queryNode.right.aabb, newNode.aabb);
         if (scoreLeft < scoreRight) {
-            BvhInsert(bvh, queryNode.left, newNode);
+            return BvhInsert(bvh, queryNode.left, newNode);
         } else {
-            BvhInsert(bvh, queryNode.right, newNode);
+            return BvhInsert(bvh, queryNode.right, newNode);
         }
     }
 }
@@ -98,26 +99,34 @@ function BvhRemove(bvh, node) {
     > Find sibling on parent of node
     > Convert parent to sibling, clear links
     */
-   let parent = node.parent;
-   if (parent === null) {
+    if (!node.IsLeaf()) {
+        console.log(`Cannot remove a branch node!`);
+        return;
+    }
+    let parent = node.parent;
+    if (parent === null) {
         console.log(`Removing root node`);
         // must be the root!
         bvh.root = null;
         bvh.nextNodeId = 0;
         bvh.depth = 0;
         return;
-   }
-   console.log(`Collapsing branch (parent ${node.parent.id})`);
-   
-   let sibling;
-   if (parent.left === node) { sibling = parent.right; }
-   else if (parent.right === node) { sibling = parent.left; }
-   else { console.error(`Deleting node - corrupted parent ref`); return; }
-   // Copy sibling onto parent
-   parent.aabb = sibling.aabb;
-   parent.userData = sibling.userData;
-   parent.left = null;
-   parent.right = null;
+    }
+    console.log(`Collapsing branch (parent ${node.parent.id})`);
+
+    let sibling;
+    if (parent.left === node) { sibling = parent.right; }
+    else if (parent.right === node) { sibling = parent.left; }
+    else { console.error(`Deleting node - corrupted parent ref`); return; }
+    // Copy sibling onto parent
+    parent.aabb = sibling.aabb;
+    parent.userData = sibling.userData;
+    if (!sibling.IsLeaf()) {
+        sibling.left.parent = parent;
+        sibling.right.parent = parent;
+    }
+    parent.left = sibling.left;
+    parent.right = sibling.right;
    
 }
 
@@ -185,9 +194,9 @@ function Bvh() {
         if (this.root === null) {
             this.root = node;
             node.depth = 1;
-            return;
+            return this.root;
         }
         // Explore tree until a node to split is found
-        BvhInsert(this, this.root, node);
+        return BvhInsert(this, this.root, node);
     };
 }

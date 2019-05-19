@@ -1,8 +1,5 @@
 <html>
     <style>
-    .canvasContainer {
-        overflow: hidden;
-    }
     .row {
         display: flex;
         flex-direction: row;
@@ -14,6 +11,8 @@
         justify-content:flex-start;
     }
     .world-canvas {
+        min-width: 550px;
+        min-height: 450px;
         max-width: 550px;
         max-height: 450px;
     }
@@ -33,11 +32,11 @@
                 width="550px"
                 height="450px"></canvas>
             <br>
-            <canvas
+            <!-- <canvas
                 id="canvas2"
                 class="canvasContainer"
                 width="550px"
-                height="64px"></canvas>
+                height="64px"></canvas> -->
         </div>
         
         
@@ -203,13 +202,15 @@ function WorldTickCallback(gs, input, deltaTime) {
 
 
     // Adjust tree based on input
-    const continuous = false;
+    const continuous = true;
     if (input.mouseOneClick) {
         // Add shape, rebuild tree
         let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
         box.tag = TAG_BOXES;
         if (continuous) {
-            bvh.Insert(Shape2Node(bvh, box));
+            let node = gs.bvh.Insert(Shape2Node(gs.bvh, box));
+            //AddBvhNodeOutline(gs, node);
+            DrawBvh(gs, gs.bvh);
         }
         else {
             RebuildTree();
@@ -328,17 +329,21 @@ function BuildBvhOverShapes(gs) {
 ////////////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////////////
+function AddBvhNodeOutline(gs, node) {
+    let hw = (node.aabb.maxX - node.aabb.minX) / 2;
+    let hh = (node.aabb.maxY - node.aabb.minY) / 2;
+    let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
+    outline.externalId = node.id;
+    outline.tag = TAG_BVH_OUTLINE;
+}
+
 function DrawBvh(gs, bvh) {
     gs.RemoveAllByTag(TAG_BVH_OUTLINE);
     let numNodes = 0;
     // Build display outlines
     if (gs.bvh.root) {
         RecursiveWalk(gs.bvh.root, (node) => {
-            let hw = (node.aabb.maxX - node.aabb.minX) / 2;
-            let hh = (node.aabb.maxY - node.aabb.minY) / 2;
-            let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
-            outline.externalId = node.id;
-            outline.tag = TAG_BVH_OUTLINE;
+            AddBvhNodeOutline(gs, node);
             numNodes++;
         });
     }
@@ -420,7 +425,7 @@ function InitGraph(canvasElementId) {
 }
 
 let world = InitWorld("canvas");
-let graph = InitGraph("canvas2");
+//let graph = InitGraph("canvas2");
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////

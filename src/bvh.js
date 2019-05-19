@@ -124,10 +124,22 @@ function BvhRemove(bvh, node) {
     if (!sibling.IsLeaf()) {
         sibling.left.parent = parent;
         sibling.right.parent = parent;
+        // 
+        
     }
     parent.left = sibling.left;
     parent.right = sibling.right;
-   
+
+    // Rebuild bounding boxes
+    if (!parent.IsLeaf()) {
+        parent.aabb = BvhCombineAABBs(parent.left.aabb, parent.right.aabb);
+    }
+    
+    let next = parent.parent;
+    while (next) {
+        next.aabb = BvhCombineAABBs(next.left.aabb, next.right.aabb);
+        next = next.parent;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -155,7 +167,7 @@ function RecursiveWalk(node, callback) {
 function BvhNode(bvh, parentNode) {
     this.parent = parentNode;
     this.id = ++bvh.nextNodeId;
-    console.log(`Created node ${this.id}`);
+    //console.log(`Created node ${this.id}`);
     // AABB Should be inflated for leaves
     // (actual, moving objects)
     // bounding box for branches

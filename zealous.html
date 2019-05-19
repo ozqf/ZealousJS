@@ -111,25 +111,6 @@ function WorldTickCallback(gs, input, deltaTime) {
 		cursor.pos.x = gs.cursorPos.x;
 		cursor.pos.y = gs.cursorPos.y;
     }
-    // Check raw AABB vs first shape
-    /*
-    let aabb = cursor.ToAABB();
-    let shapes = gs.FindAllByTag(TAG_BOXES);
-    let len = shapes.length;
-    let box;
-    if (len === 0) {
-        box = gs.AddBox(128, 128, 32, 32, COLOUR_BOX_DEFAULT);
-        box.tag = TAG_BOXES;
-        len = 1;
-    }
-    else { box = shapes[0]; }
-    let boxAABB = box.ToAABB();
-    if (OverlapAABBs(aabb, boxAABB)) {
-        console.log(`OVERLAP!`);
-    }
-    */
-    // Analyse tree
-    
     // Clear colours
 	let boxes = gs.FindAllByTag(TAG_BOXES);
 	for (let i = 0; i < boxes.length; ++i) {
@@ -146,6 +127,7 @@ function WorldTickCallback(gs, input, deltaTime) {
     let overlaps = [];
     let visits = [];
     
+    // Analyse tree
     let PointTestVisit = (x, y, node, callback) => {
         visits.push(node.id);
         //if (!node.VsPoint(x, y)) { return false; }
@@ -226,10 +208,9 @@ function WorldTickCallback(gs, input, deltaTime) {
                 if (continuous) {
                     BvhRemove(gs.bvh, overlaps[i]);    
                 }
-                
-            }
-            if (!continuous) {
-                RebuildTree();
+                else {
+                    RebuildTree();
+                }
             }
         }
         DrawBvh(gs, gs.bvh);
@@ -253,7 +234,10 @@ function ClearScene() {
 }
 
 function RebuildTree() {
+    let start = performance.now();
     world.bvh = BuildBvhOverShapes(world);
+    let end = performance.now();
+    console.log(`  build in ${end - start}ms`);
     DrawBvh(world, world.bvh);
     world.dirty = true;
 }

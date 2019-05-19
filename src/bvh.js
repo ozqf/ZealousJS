@@ -173,4 +173,14 @@ function Bvh() {
         this.nextNodeId = 0;
         this.depth = 0;
     };
+
+    this.Insert = (node) => {
+        if (this.root === null) {
+            this.root = node;
+            node.depth = 1;
+            return;
+        }
+        // Explore tree until a node to split is found
+        BvhInsert(this, this.root, node);
+    };
 }

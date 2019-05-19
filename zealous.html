@@ -281,6 +281,8 @@ function AutoBuildBvh(gs) {
         let node = new BvhNode(bvh, null);
         node.aabb = shape.ToAABB();
         node.userData = shape.id;
+        bvh.Insert(node);
+        /*
         if (bvh.root === null) {
             bvh.root = node;
             node.depth = 1;
@@ -290,6 +292,7 @@ function AutoBuildBvh(gs) {
         let queryNode = bvh.root;
         // Explore tree until a node to split is found
         BvhInsert(bvh, queryNode, node);
+        */
     }
     let numNodes = numShapes + (numShapes - 1);
     // gs.bvh.nextNodeId

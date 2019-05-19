@@ -63,8 +63,14 @@ function BvhInsert(bvh, queryNode, newNode) {
         let sibling = new BvhNode(bvh, queryNode);
         sibling.userData = queryNode.userData;
         queryNode.userData = null;
+        
         CopyAABB(queryNode.aabb, sibling.aabb);
         queryNode.aabb = BvhCombineAABBs(sibling.aabb, newNode.aabb);
+        queryNode.aabb.minX -= bvh.padding;
+        queryNode.aabb.minY -= bvh.padding;
+        queryNode.aabb.maxX += bvh.padding;
+        queryNode.aabb.maxY += bvh.padding;
+
         queryNode.left = sibling;
         queryNode.right = newNode;
         newNode.parent = queryNode;
@@ -168,6 +174,7 @@ function Bvh() {
     this.root = null;
     this.nextNodeId = 0;
     this.depth = 0;
+    this.padding = 8;
     this.Clear = () => {
         this.root = null;
         this.nextNodeId = 0;

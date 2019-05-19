@@ -174,7 +174,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		minY: 0
 	};
 	
-	ctx.fillStyle = "#000000";
+	ctx.fillStyle = "#000000ff	";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	
 	let PreTickCallback = preTickCallback;

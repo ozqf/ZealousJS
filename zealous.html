@@ -203,20 +203,32 @@ function WorldTickCallback(gs, input, deltaTime) {
 
 
     // Adjust tree based on input
-    
+    const continuous = false;
     if (input.mouseOneClick) {
         // Add shape, rebuild tree
         let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
         box.tag = TAG_BOXES;
-        RebuildTree();(gs);
+        if (continuous) {
+            bvh.Insert(Shape2Node(bvh, box));
+        }
+        else {
+            RebuildTree();
+        }
+        
         gs.dirty = true;
     }
-
+    
     if (input.mouseTwoClick) {
         // Add shape, rebuild tree
         for (let i = overlaps.length - 1; i >= 0; --i) {
             if (gs.RemoveById(overlaps[i].userData)) {
-                BvhRemove(gs.bvh, overlaps[i]);
+                if (continuous) {
+                    BvhRemove(gs.bvh, overlaps[i]);    
+                }
+                
+            }
+            if (!continuous) {
+                RebuildTree();
             }
         }
         DrawBvh(gs, gs.bvh);
@@ -240,7 +252,7 @@ function ClearScene() {
 }
 
 function RebuildTree() {
-    world.bvh = AutoBuildBvh(world);
+    world.bvh = BuildBvhOverShapes(world);
     DrawBvh(world, world.bvh);
     world.dirty = true;
 }
@@ -266,21 +278,32 @@ function SortShapes(shapes) {
     });
 }
 
-function AutoBuildBvh(gs) {
-    gs.bvh.Clear();
+function Shape2Node(bvh, shape) {
+    let node = new BvhNode(bvh, null);
+    node.aabb = shape.ToAABB();
+    node.aabb.minX -= bvh.padding;
+    node.aabb.minY -= bvh.padding;
+    node.aabb.maxX += bvh.padding;
+    node.aabb.maxY += bvh.padding;
+    node.userData = shape.id;
+    return node;
+}
+function BuildBvhOverShapes(gs) {
+    if (gs.bvh) {
+        gs.bvh.Clear();
+    }
+    let bvh = new Bvh();
+    gs.bvh = bvh;
     peakVisits = 0;
     let shapes = gs.FindAllByTag(TAG_BOXES);
     // Shuffle shapes to rearrange insertion order
     // (improves tree balance)
     Shuffle(shapes);
     //SortShapes(shapes);
-    let bvh = new Bvh();
     let numShapes = shapes.length;
     for (let i = 0; i < numShapes; ++i) {
         let shape = shapes[i];
-        let node = new BvhNode(bvh, null);
-        node.aabb = shape.ToAABB();
-        node.userData = shape.id;
+        let node = Shape2Node(bvh, shape);
         bvh.Insert(node);
         /*
         if (bvh.root === null) {
@@ -353,7 +376,7 @@ function InitWorld(canvasElementId) {
 	    	let y = RandomRange(
 	    		min.y + (halfHeight + padding),
 	    		max.y - (halfHeight + padding));
-            let box = gs.AddBox(x, y, halfWidth, halfHeight, '#ff0000');
+            let box = gs.AddBox(x, y, halfWidth, halfHeight, COLOUR_BOX_DEFAULT);
             box.tag = TAG_BOXES;
             console.log(`Add shape ${box.id}`);
         }   

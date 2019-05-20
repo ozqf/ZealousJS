@@ -126,8 +126,10 @@ function WorldTickCallback(gs, input, deltaTime) {
     // Gather scan information
     let overlaps = [];
     let visits = [];
-    
+    ////////////////////////////////////////////////////////////////
     // Analyse tree
+
+    // Gather node visits
     let PointTestVisit = (x, y, node, callback) => {
         visits.push(node.id);
         //if (!node.VsPoint(x, y)) { return false; }
@@ -140,10 +142,15 @@ function WorldTickCallback(gs, input, deltaTime) {
         }
         return true;
     };
+    // Gather leaves
     let x = gs.cursorPos.x, y = gs.cursorPos.y;
     if (gs.bvh.root !== null) {
         if (gs.bvh.root.VsPoint(x, y)) {
             PointTestVisit(x, y, gs.bvh.root, (node) => {
+            if (!node.IsLeaf()) {
+                console.log(`Cannot add a branch overlap!`);
+                return;
+            }
             overlaps.push(node);
             });
         }
@@ -202,11 +209,18 @@ function WorldTickCallback(gs, input, deltaTime) {
     }
     
     if (input.mouseTwoClick) {
-        // Add shape, rebuild tree
+        // Remove shape, rebuild tree
+        // NOTE: If in continuous mode, only ONE node can be removed every frame
+        // if two nodes are next to each other the references will become invalid!!
         for (let i = overlaps.length - 1; i >= 0; --i) {
+            console.log(`Delete node: `, overlaps[i]);
             if (gs.RemoveById(overlaps[i].userData)) {
                 if (continuous) {
-                    BvhRemove(gs.bvh, overlaps[i]);    
+                    BvhRemove(gs.bvh, overlaps[i]);
+                    if (overlaps.length > 1) {
+                        console.warn(`Cannot delete two nodes in the same frame - Fix remove function!`);
+                        //break;
+                    }
                 }
                 else {
                     RebuildTree();
@@ -215,9 +229,6 @@ function WorldTickCallback(gs, input, deltaTime) {
         }
         DrawBvh(gs, gs.bvh);
         gs.dirty = true;
-        //let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
-        //box.tag = TAG_BOXES;
-        //RebuildTree();(gs);
     }
 
 }

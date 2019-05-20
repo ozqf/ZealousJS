@@ -95,9 +95,9 @@ function BvhInsert(bvh, queryNode, newNode) {
 }
 
 function BvhRemove(bvh, node) {
+    console.log(`Remove `)
     /*
-    > Find sibling on parent of node
-    > Convert parent to sibling, clear links
+    Only leaves can be removed atm!
     */
     if (!node.IsLeaf()) {
         console.log(`Cannot remove a branch node!`);
@@ -112,30 +112,43 @@ function BvhRemove(bvh, node) {
         bvh.depth = 0;
         return;
     }
+    /*
+    > Find sibling on parent of node
+    > Convert parent to sibling, clear links
+    */
     console.log(`Collapsing branch (parent ${node.parent.id})`);
-
+	
     let sibling;
+    // Find sibling
     if (parent.left === node) { sibling = parent.right; }
     else if (parent.right === node) { sibling = parent.left; }
-    else { console.error(`Deleting node - corrupted parent ref`); return; }
-    // Copy sibling onto parent
-    parent.aabb = sibling.aabb;
-    parent.userData = sibling.userData;
-    if (!sibling.IsLeaf()) {
-        sibling.left.parent = parent;
-        sibling.right.parent = parent;
-        // 
-        
-    }
-    parent.left = sibling.left;
-    parent.right = sibling.right;
+    else { console.error(`Cannot delete node - corrupted parent ref`); return; }
 
-    // Rebuild bounding boxes
-    if (!parent.IsLeaf()) {
-        parent.aabb = BvhCombineAABBs(parent.left.aabb, parent.right.aabb);
+	let grandParent = parent.parent;
+    // Copy parent onto sibling, removing self and parent from the tree.
+	// Swap grandparent's references to point to sibling, not parent
+	if (grandParent !== null) {
+		if (grandParent.left === parent) {
+			grandParent.left = sibling;
+		}
+		if (grandParent.right === parent) {
+			grandParent.right = sibling;
+        }
+        sibling.parent = grandParent;
+    }
+    else {
+        // new root!
+        sibling.parent = null;
+        bvh.root = sibling;
     }
     
-    let next = parent.parent;
+    
+	// Rebuild bounding boxes
+    if (!sibling.IsLeaf()) {
+        sibling.aabb = BvhCombineAABBs(sibling.left.aabb, sibling.right.aabb);
+    }
+    
+    let next = sibling.parent;
     while (next) {
         next.aabb = BvhCombineAABBs(next.left.aabb, next.right.aabb);
         next = next.parent;

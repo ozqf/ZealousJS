@@ -22,6 +22,7 @@
             <div class="row">
                 <button onclick="RebuildTree()">Rebuild</button>
                 <button onclick="ClearScene()">Clear</button>
+                <input type="checkbox" name="Playing">Playing
                 <div id="treeStats"></div>
                 <div id="debugText"></div>
             </div>
@@ -66,6 +67,7 @@ let cursorId = -1;
 let treeStats = "";
 let debugText = "";
 let peakVisits = 0;
+let playing = true;
 
 ////////////////////////////////////////////////////////////////////
 // Utils
@@ -122,6 +124,13 @@ function WorldTickCallback(gs, input, deltaTime) {
         outlines[i].colour = COLOUR_BVH_DEFAULT;
         outlines[i].depth = 50;
     }
+
+    if (playing) {
+        gs.StepShapes(boxes, deltaTime);
+        RebuildTree();
+        gs.dirty = true;
+    }
+    
 
     // Gather scan information
     let overlaps = [];
@@ -194,8 +203,12 @@ function WorldTickCallback(gs, input, deltaTime) {
     const continuous = true;
     if (input.mouseOneClick) {
         // Add shape, rebuild tree
-        let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 16, 16, COLOUR_BOX_DEFAULT);
+        let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 6, 6, COLOUR_BOX_DEFAULT);
         box.tag = TAG_BOXES;
+        let radians = Math.random() * (Math.PI * 2);
+        let speed = (Math.random() * 64) + 32;
+        box.vel.x = Math.cos(radians) * speed;
+        box.vel.y = Math.sin(radians) * speed;
         if (continuous) {
             let node = gs.bvh.Insert(Shape2Node(gs.bvh, box));
             //AddBvhNodeOutline(gs, node);
@@ -248,7 +261,7 @@ function RebuildTree() {
     let start = performance.now();
     world.bvh = BuildBvhOverShapes(world);
     let end = performance.now();
-    console.log(`  build in ${end - start}ms`);
+    //console.log(`  build in ${end - start}ms`);
     DrawBvh(world, world.bvh);
     world.dirty = true;
 }
@@ -294,7 +307,7 @@ function BuildBvhOverShapes(gs) {
     let shapes = gs.FindAllByTag(TAG_BOXES);
     // Shuffle shapes to rearrange insertion order
     // (improves tree balance)
-    Shuffle(shapes);
+    //Shuffle(shapes);
     //SortShapes(shapes);
     let numShapes = shapes.length;
     for (let i = 0; i < numShapes; ++i) {
@@ -343,7 +356,7 @@ function DrawBvh(gs, bvh) {
         });
     }
     
-    console.log(`Drawing ${numNodes} tree nodes`);
+    //console.log(`Drawing ${numNodes} tree nodes`);
 }
 
 function CreateGraphForTree(bvh) {

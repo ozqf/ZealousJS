@@ -9,7 +9,10 @@ function CopyAABB(original, copy) {
 }
 
 function CalcAABBVolume(aabb) {
-    let volume = (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY);
+    // volume
+    //let volume = (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY);
+    // lets try circumference
+    let volume = (2 * (aabb.maxX - aabb.minX)) + (2 * (aabb.maxY - aabb.minY));
     return volume;
 }
 
@@ -208,7 +211,7 @@ function Bvh() {
     this.root = null;
     this.nextNodeId = 0;
     this.depth = 0;
-    this.padding = 8;
+    this.padding = 0;
     this.Clear = () => {
         this.root = null;
         this.nextNodeId = 0;

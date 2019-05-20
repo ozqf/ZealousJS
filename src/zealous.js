@@ -40,6 +40,7 @@ function ZqfInitShapeBase(obj, id, tag, depth, x, y) {
 	obj.depth = depth;
 	obj.externalId = null;
 	obj.pos = new V2(x, y);
+	obj.vel = new V2(0, 0);
 }
 
 // Primitive constructors:
@@ -136,10 +137,6 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 		};
 	};
 }
-
-
-
-
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -271,6 +268,18 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	///////////////////////////////////////////////////////////////////
 	// Frame cycle
 	///////////////////////////////////////////////////////////////////
+	this.StepShapes = (list, deltaTime) => {
+		for (let i = list.length - 1; i >= 0; --i) {
+			let shape = list[i];
+			shape.pos.x += shape.vel.x * deltaTime;
+			shape.pos.y += shape.vel.y * deltaTime;
+			if (shape.pos.x > canvas.width) { shape.pos.x = 0; }
+			if (shape.pos.x < 0) { shape.pos.x = canvas.width; }
+			if (shape.pos.y > canvas.height) { shape.pos.y = 0; }
+			if (shape.pos.y < 0) { shape.pos.y = canvas.height; }
+		}
+	};
+
     this.Tick = (deltaTime) => {
 		if (!this.dirty) { return; }
 		this.dirty = false;

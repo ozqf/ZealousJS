@@ -22,6 +22,7 @@
             <div class="row">
                 <button onclick="RebuildTree()">Rebuild</button>
                 <button onclick="ClearScene()">Clear</button>
+                Timescale
                 <input
 					type="range"
 					name="Playing"
@@ -29,7 +30,21 @@
 					max="100"
 					value="100"
 					oninput="HandleTimescaleInput(this.value)"
-					>Timescale
+                    >
+                Query Area
+                <input
+					type="range"
+					name="QueryScale"
+					min="2"
+					max="128"
+					value="128"
+					oninput="HandleQueryScaleInput(this.value)"
+                    >
+                Draw Tree
+                <input
+                    type="checkbox"
+
+                >
                 <div id="treeStats"></div>
                 <div id="debugText"></div>
             </div>

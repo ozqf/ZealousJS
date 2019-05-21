@@ -71,6 +71,7 @@ const COLOUR_BOX_OVERLAP = "#00ffffff";
 
 const COLOUR_BVH_DEFAULT = "#999999ff";
 const COLOUR_BVH_OVERLAP = "#ffff00ff";
+const COLOUR_BVH_LINK = "#ff00ffff";
 
 let cursorId = -1;
 let treeStats = "";
@@ -209,7 +210,7 @@ function WorldTickCallback(gs, input, deltaTime) {
         gs.dirty = true;
     }
     
-    AnalyseTree(gs.bvh);
+    //AnalyseTree(gs.bvh);
 
     // Gather scan information
     let overlaps = [];
@@ -422,6 +423,24 @@ function AddBvhNodeOutline(gs, node) {
     let outline = gs.AddOutline(node.aabb.minX + hw, node.aabb.minY + hh, hw, hh, '#ffff00');
     outline.externalId = node.id;
     outline.tag = TAG_BVH_OUTLINE;
+    if (node.parent) {
+        // Draw line between parent and self centroid
+        //LineCtor(id, startX, startY, endX, endY, colour)
+        
+        let a = node.parent.aabb;
+        let b = node.aabb;
+        
+        let line = gs.AddLine(
+            BvhAABBX(a),
+            BvhAABBY(a),
+            BvhAABBX(b),
+            BvhAABBY(b),
+            COLOUR_BVH_LINK
+        );
+
+        line.externalId = node.id;
+        line.tag = TAG_BVH_OUTLINE;
+    }
 }
 
 function DrawBvh(gs, bvh) {

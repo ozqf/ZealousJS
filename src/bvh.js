@@ -1,6 +1,14 @@
 ////////////////////////////////////////////////////////////////////
 // Utility functions
 ////////////////////////////////////////////////////////////////////
+function BvhAABBX(aabb) {
+    return aabb.minX + ((aabb.maxX - aabb.minX) / 2);
+}
+
+function BvhAABBY(aabb) {
+    return aabb.minY + ((aabb.maxY - aabb.minY) / 2);
+}
+
 function CopyAABB(original, copy) {
     copy.minX = original.minX;
     copy.minY = original.minY;

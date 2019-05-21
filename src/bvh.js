@@ -227,4 +227,9 @@ function Bvh() {
         // Explore tree until a node to split is found
         return BvhInsert(this, this.root, node);
     };
+	
+	this.QueryAABB = (minX, maxX, minY, maxY) => {
+		let nodes = [];
+		// Iterative tree traversal
+	};
 }

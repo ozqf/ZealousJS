@@ -22,7 +22,14 @@
             <div class="row">
                 <button onclick="RebuildTree()">Rebuild</button>
                 <button onclick="ClearScene()">Clear</button>
-                <input type="checkbox" name="Playing">Playing
+                <input
+					type="range"
+					name="Playing"
+					min="0"
+					max="100"
+					value="100"
+					oninput="HandleTimescaleInput(this.value)"
+					>Timescale
                 <div id="treeStats"></div>
                 <div id="debugText"></div>
             </div>
@@ -33,6 +40,7 @@
                 width="550px"
                 height="450px"></canvas>
             <br>
+            <div id="treeAnalysisOutput"></div>
             <!-- <canvas
                 id="canvas2"
                 class="canvasContainer"
@@ -48,6 +56,7 @@
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
+"use strict";
 
 // WORLD TAGS
 const TAG_BOXES = 1;
@@ -104,6 +113,75 @@ function SetTreeStats(str) {
     div.innerHTML = treeStats;
 }
 
+function SetTreeAnalysis(str) {
+    let div = document.getElementById("treeAnalysisOutput");
+    div.innerHTML = str;
+}
+
+function HandleTimescaleInput(timeScale) {
+	console.log(`Timescale ${timeScale}`);
+	world.timeScale = timeScale / 100;
+}
+
+////////////////////////////////////////////////////////////////////
+// Analyse Tree
+////////////////////////////////////////////////////////////////////
+function ScoreChildBranches(node) {
+	// Only comparing sets of branches, not leaves
+	if (node.left.IsLeaf() || node.right.IsLeaf()) { return ""; }
+	
+	let a = node.left.left.aabb;
+	let b = node.left.right.aabb;
+	let c = node.right.left.aabb;
+	let d = node.right.right.aabb;
+	
+	let ab = CalcAABBVolume(BvhCombineAABBs(a, b));
+	let cd = CalcAABBVolume(BvhCombineAABBs(c, d));
+    let abcd = Math.round(ab + cd);
+	
+	let ac = CalcAABBVolume(BvhCombineAABBs(a, c));
+	let bd = CalcAABBVolume(BvhCombineAABBs(b, d));
+	let acbd = Math.round(ac + bd);
+
+	let ad = CalcAABBVolume(BvhCombineAABBs(a, d));
+	let bc = CalcAABBVolume(BvhCombineAABBs(b, c));
+    let adbc = Math.round(ad + bc);
+	return `Branch scores: ab/cd: ${abcd}, ac/bd: ${acbd} ad/bc: ${adbc}`;
+}
+
+function AnalyseTree(bvh) {
+    let str = "";
+    if (bvh.root === null) { str = "No tree"; }
+    else
+    {
+        RecursiveWalk(bvh.root, (node) => {
+            let nodeStr = "";
+            let parentStr;//
+			if (node.parent) {
+				// by definition, if there is a parent,
+				// it must have two children, one of which is this node
+				let dir = node === node.parent.left ? "left" : "right";
+				parentStr = `${dir} of ${node.parent.id}`;
+			}
+			else {
+				parentStr = `Root`;
+			}
+            if (node.IsLeaf()) {
+                
+                nodeStr = `Leaf ${node.id} cost ${CalcAABBVolume(node.aabb)} - ${parentStr}`;
+                
+            } else {
+				// Compare branching of children below.
+                let scores = "";//ScoreChildBranches(node);
+				nodeStr = `Branch ${node.id} cost ${CalcAABBVolume(node.aabb)} - ${parentStr} ${scores}`;
+				
+            }
+            str += nodeStr + `<br>`;
+        });
+    }
+    SetTreeAnalysis(str);
+}
+
 ////////////////////////////////////////////////////////////////////
 // Frame loop
 ////////////////////////////////////////////////////////////////////
@@ -131,6 +209,7 @@ function WorldTickCallback(gs, input, deltaTime) {
         gs.dirty = true;
     }
     
+    AnalyseTree(gs.bvh);
 
     // Gather scan information
     let overlaps = [];
@@ -367,7 +446,7 @@ function CreateGraphForTree(bvh) {
 function InitWorld(canvasElementId) {
 	let gs = new CreateEngineInstance(canvasElementId, WorldTickCallback);
 	//gs.CreateGrid(100);
-    gs.Start(20);
+    gs.Start(10);
     gs.bvh = new Bvh();
 
     let canvas = document.getElementById(canvasElementId);

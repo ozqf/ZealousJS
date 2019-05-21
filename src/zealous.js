@@ -185,6 +185,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	let tick = 0;
 	
 	this.dirty = true;
+	this.timeScale = 1;
     this.deg2rad = 3.141593 / 180;
     this.rad2deg = 57.2958;
     let radians = 0;
@@ -440,6 +441,8 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		// DT is in seconds, interval has to be milliseconds
 		let deltaTime = 1 / fps;
 		let interval = 1000 / fps;
-        setInterval(() => { this.Tick(deltaTime) }, interval);
+        setInterval(() => {
+			this.Tick(deltaTime * this.timeScale);
+		}, interval);
 	}
 }

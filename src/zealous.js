@@ -274,10 +274,21 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 			let shape = list[i];
 			shape.pos.x += shape.vel.x * deltaTime;
 			shape.pos.y += shape.vel.y * deltaTime;
-			if (shape.pos.x > canvas.width) { shape.pos.x = 0; }
-			if (shape.pos.x < 0) { shape.pos.x = canvas.width; }
-			if (shape.pos.y > canvas.height) { shape.pos.y = 0; }
-			if (shape.pos.y < 0) { shape.pos.y = canvas.height; }
+			// Wrap:
+			//if (shape.pos.x > canvas.width) { shape.pos.x = 0; }
+			//if (shape.pos.x < 0) { shape.pos.x = canvas.width; }
+			//if (shape.pos.y > canvas.height) { shape.pos.y = 0; }
+			//if (shape.pos.y < 0) { shape.pos.y = canvas.height; }
+			// Bounce:
+			let vel = shape.vel;
+			if (shape.pos.x > canvas.width)
+			{ shape.pos.x = canvas.width; vel.x = -vel.x; }
+			if (shape.pos.x < 0)
+			{ shape.pos.x = 0; vel.x = -vel.x; }
+			if (shape.pos.y > canvas.height)
+			{ shape.pos.y = canvas.height; vel.y = -vel.y; }
+			if (shape.pos.y < 0)
+			{ shape.pos.y = 0; vel.y = -vel.y; }
 		}
 	};
 

@@ -35,9 +35,9 @@
                 <input
 					type="range"
 					name="QueryScale"
-					min="2"
+					min="1"
 					max="128"
-					value="128"
+					value="64"
 					oninput="HandleQueryScaleInput(this.value)"
                     >
                 Draw Tree
@@ -88,6 +88,8 @@ const COLOUR_BVH_DEFAULT = "#999999ff";
 const COLOUR_BVH_OVERLAP = "#ffff00ff";
 const COLOUR_BVH_LINK = "#ff00ffff";
 
+const WORLD_FRAME_RATE = 20;
+
 let cursorId = -1;
 let treeStats = "";
 let debugText = "";
@@ -137,6 +139,14 @@ function SetTreeAnalysis(str) {
 function HandleTimescaleInput(timeScale) {
 	console.log(`Timescale ${timeScale}`);
 	world.timeScale = timeScale / 100;
+}
+
+function HandleQueryScaleInput(scale) {
+    let cursor = world.FindEntById(cursorId);
+	if (cursor) {
+        cursor.radius = scale;
+        console.log(`Query radius ${cursor.radius}`);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -259,7 +269,31 @@ function WorldTickCallback(gs, input, deltaTime) {
             });
         }
     }
-    
+
+    let queryAABB = {
+        minX: cursor.pos.x - cursor.radius,
+        maxX: cursor.pos.x + cursor.radius,
+        minY: cursor.pos.y - cursor.radius,
+        maxY: cursor.pos.y + cursor.radius
+    };
+    console.log(`Query area ${queryAABB.minX}, ${queryAABB.maxX} to ${queryAABB.minY}, ${queryAABB.maxY}`);
+    let aabbLeaves = gs.bvh.QueryAABB(queryAABB);
+    if (aabbLeaves.length > 0) {
+        let str = `Search Radius ${cursor.radius} Shapes: ${aabbLeaves.map(x => x.id).join(`, `)}`;
+        SetTreeAnalysis(str);
+    }else {
+        SetTreeAnalysis("");
+    }
+    for (let i = aabbLeaves.length - 1; i >= 0; --i) {
+        let outline = gs.FindEntByExternalId(aabbLeaves[i].id);
+        if (outline === null) {
+            console.log(`No Node ${visits[i]} found!`);
+            continue;
+        }
+        outline.colour = COLOUR_BVH_OVERLAP;
+        outline.depth = 0;
+    }
+    /*
     // Gather stats
     if (visits.length > peakVisits) { peakVisits = visits.length; }
     let percentage = 0;
@@ -289,11 +323,12 @@ function WorldTickCallback(gs, input, deltaTime) {
             continue;
         }
         outline.colour = COLOUR_BVH_OVERLAP;
-        outlines[i].depth = 0;
+        outline.depth = 0;
     }
+    */
 
-
-
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
     // Adjust tree based on input
     const continuous = true;
     if (input.mouseOneClick) {
@@ -480,7 +515,7 @@ function CreateGraphForTree(bvh) {
 function InitWorld(canvasElementId) {
 	let gs = new CreateEngineInstance(canvasElementId, WorldTickCallback);
 	//gs.CreateGrid(100);
-    gs.Start(10);
+    gs.Start(WORLD_FRAME_RATE);
     gs.bvh = new Bvh();
 
     let canvas = document.getElementById(canvasElementId);

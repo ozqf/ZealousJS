@@ -208,6 +208,11 @@ function BvhNode(bvh, parentNode) {
 		if (x < this.aabb.minX || x > this.aabb.maxX) { return false; }
 		if (y < this.aabb.minY || y > this.aabb.maxY) { return false; }
 		return true;
+    };
+    this.VsAABB = (minX, minY, maxX, maxY) => {
+		if (x < this.aabb.minX || x > this.aabb.maxX) { return false; }
+		if (y < this.aabb.minY || y > this.aabb.maxY) { return false; }
+		return true;
 	};
     // attached external ref
 	// ...I mean, it's javascript, so you can do it where you like but
@@ -236,8 +241,34 @@ function Bvh() {
         return BvhInsert(this, this.root, node);
     };
 	
-	this.QueryAABB = (minX, maxX, minY, maxY) => {
-		let nodes = [];
-		// Iterative tree traversal
+	this.QueryAABB = (queryAABB) => {
+        let leaves = []; // results
+        if (this.root === null) { return leaves; }
+        if (!OverlapAABBs(queryAABB, this.root.aabb)) { return leaves; }
+
+        let stack = []; // list of nodes to examine
+        stack.push(this.root);
+        
+        while (stack.length > 0) {
+            let node = stack.pop();
+            if (!OverlapAABBs(queryAABB, node.aabb)) {
+                continue;
+            }
+
+            if (node.IsLeaf()) {
+                leaves.push(node);
+                continue;
+            }
+            stack.push(node.left);
+            stack.push(node.right);
+
+            // if (OverlapAABBs(queryAABB, node.left.aabb)) {
+            //     stack.push(node.left);
+            // }
+            // if (OverlapAABBs(queryAABB, node.right.aabb)) {
+            //     stack.push(node.right);
+            // }
+        }
+		return leaves;
 	};
 }

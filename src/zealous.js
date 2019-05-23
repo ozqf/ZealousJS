@@ -43,6 +43,21 @@ function ZqfInitShapeBase(obj, id, tag, depth, x, y) {
 	obj.vel = new V2(0, 0);
 }
 
+function GenericCtor(
+	id, newX, newY, newColour) {
+	ZqfInitShapeBase(this, id, 0, 0, newX, newY);
+	let aabb = { 
+		minX: this.pos.x,
+		minY: this.pos.y,
+		maxX: this.pos.x,
+		maxY: this.pos.y
+	};
+	this.Draw = function(ctx, camera) { };
+	this.ToAABB = function() {
+		return aabb;
+	};
+}
+
 // Primitive constructors:
 function BoxCtor(
 	id, newX, newY, newHalfWidth, newHalfHeight, newColour) {
@@ -201,6 +216,14 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	////////////////////////////////////////////////////////////
 	// Entity Creation
 	////////////////////////////////////////////////////////////
+	
+	this.AddGeneric = function(x0, y0, x1, y1, colour) {
+		let obj = new GenericCtor(
+			nextEntityId++, x, y, colour);
+		shapes.push(obj);
+		return obj;
+	};
+	
 	this.AddBox = function(x, y, halfWidth, halfHeight, colour) {
 		let box = new BoxCtor(
 			nextEntityId++, x, y, halfWidth, halfHeight, colour);

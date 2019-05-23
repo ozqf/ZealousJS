@@ -43,7 +43,7 @@
                 Continuous
                 <input
                     type="checkbox"
-                    value="false"
+                    checked="true"
                     onchange="HandleToggleContinous(this)"
                 >
             </div>
@@ -78,6 +78,7 @@
 const TAG_BOXES = 1;
 const TAG_BVH_OUTLINE = 2;
 const TAG_CURSOR_BOX = 3;
+const TAG_BVH_DRAW = 4;
 
 // GRAPH TAGS
 const TAG_GRAPH_NODE = 1;
@@ -97,7 +98,7 @@ let debugText = "";
 let peakVisits = 0;
 
 let bvhSettings = {
-    continuous: false,
+    continuous: true,
     playing: true,
     shuffle: false,
     sort: false,
@@ -248,7 +249,7 @@ function WorldTickCallback(gs, input, deltaTime) {
 
     if (bvhSettings.playing) {
         gs.StepShapes(boxes, deltaTime);
-        RebuildTree();
+        //RebuildTree();
         gs.dirty = true;
     }
     
@@ -288,11 +289,9 @@ function WorldTickCallback(gs, input, deltaTime) {
     }
 
     let queryAABB = cursor.ToAABB();
-
-    //console.log(`Query area ${queryAABB.minX}, ${queryAABB.minY} to ${queryAABB.maxX}, ${queryAABB.maxY}`);
     let aabbLeaves = gs.bvh.QueryAABB(queryAABB);
     if (aabbLeaves.length > 0) {
-        let str = `Search Radius ${cursor.radius} Shapes: ${aabbLeaves.map(x => x.userData).join(`, `)}`;
+        let str = `Overlapping Shapes: ${aabbLeaves.map(x => x.userData).join(`, `)}`;
         SetTreeAnalysis(str);
     } else {
         SetTreeAnalysis("");
@@ -343,7 +342,6 @@ function WorldTickCallback(gs, input, deltaTime) {
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     // Adjust tree based on input
-    const continuous = true;
     if (input.mouseOneClick) {
         // Add shape, rebuild tree
         let box = gs.AddBox(cursor.pos.x, cursor.pos.y, 6, 6, COLOUR_BOX_DEFAULT);
@@ -352,9 +350,8 @@ function WorldTickCallback(gs, input, deltaTime) {
         let speed = (Math.random() * 64) + 32;
         box.vel.x = Math.cos(radians) * speed;
         box.vel.y = Math.sin(radians) * speed;
-        if (continuous) {
+        if (bvhSettings.continuous) {
             let node = gs.bvh.Insert(Shape2Node(gs.bvh, box));
-            //AddBvhNodeOutline(gs, node);
             DrawBvh(gs, gs.bvh);
         }
         else {
@@ -363,20 +360,15 @@ function WorldTickCallback(gs, input, deltaTime) {
         
         gs.dirty = true;
     }
-    
+
     if (input.mouseTwoClick) {
         // Remove shape, rebuild tree
         // NOTE: If in continuous mode, only ONE node can be removed every frame
         // if two nodes are next to each other the references will become invalid!!
         for (let i = overlaps.length - 1; i >= 0; --i) {
-            console.log(`Delete node: `, overlaps[i]);
             if (gs.RemoveById(overlaps[i].userData)) {
-                if (continuous) {
+                if (bvhSettings.continuous) {
                     BvhRemove(gs.bvh, overlaps[i]);
-                    if (overlaps.length > 1) {
-                        console.warn(`Cannot delete two nodes in the same frame - Fix remove function!`);
-                        //break;
-                    }
                 }
                 else {
                     RebuildTree();
@@ -386,7 +378,35 @@ function WorldTickCallback(gs, input, deltaTime) {
         DrawBvh(gs, gs.bvh);
         gs.dirty = true;
     }
-
+    if (bvhSettings.continuous) {
+        // Continuous mode:
+        // Check for objects moving out of their tree bounding boxes.
+        // these shapes must be removed and reinserted.
+        let rogueShapes = [];
+        let rogueNodes = [];
+        gs.bvh.Traverse((node) => {
+            if (!node.IsLeaf()) { return; }
+            let shape = gs.FindEntById(node.userData);
+            if (shape === null)
+            { console.warn(`No shape ${node.userData}`); return; }
+            if (BvhAABBContains(node.aabb, shape.ToAABB()) === false) {
+                rogueShapes.push(shape);
+                rogueNodes.push(node);
+            }
+        });
+        // Remove invalid nodes
+        for (let i = rogueNodes.length - 1; i >= 0; --i) {
+            BvhRemove(gs.bvh, rogueNodes[i]);
+        }
+        // Add back moved shapes
+        for (let i = rogueShapes.length - 1; i >= 0; --i) {
+            gs.bvh.Insert(Shape2Node(gs.bvh, rogueShapes[i]));
+        }
+        DrawBvh(gs, gs.bvh);
+    } else {
+        RebuildTree();
+    }
+    
 }
 
 function GraphTickCallback(gs, input, deltaTime) {

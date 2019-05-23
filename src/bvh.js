@@ -24,6 +24,14 @@ function CalcAABBVolume(aabb) {
     return volume;
 }
 
+function BvhAABBContains(outer, inner) {
+    if (inner.minX < outer.minX) { return false; }
+    if (inner.maxX > outer.maxX) { return false; }
+    if (inner.minY < outer.minY) { return false; }
+    if (inner.maxY > outer.maxY) { return false; }
+    return true;
+}
+
 function OverlapAABBs(a, b) {
     if ((a.minX <= b.maxX && a.minY <= b.maxY)
         &&
@@ -106,7 +114,6 @@ function BvhInsert(bvh, queryNode, newNode) {
 }
 
 function BvhRemove(bvh, node) {
-    console.log(`Remove `)
     /*
     Only leaves can be removed atm!
     */
@@ -116,7 +123,7 @@ function BvhRemove(bvh, node) {
     }
     let parent = node.parent;
     if (parent === null) {
-        console.log(`Removing root node`);
+        //console.log(`Removing root node`);
         // must be the root!
         bvh.root = null;
         bvh.nextNodeId = 0;
@@ -127,7 +134,7 @@ function BvhRemove(bvh, node) {
     > Find sibling on parent of node
     > Convert parent to sibling, clear links
     */
-    console.log(`Collapsing branch (parent ${node.parent.id})`);
+    //console.log(`Collapsing branch (parent ${node.parent.id})`);
 	
     let sibling;
     // Find sibling
@@ -197,9 +204,8 @@ function BvhNode(bvh, parentNode) {
     // bounding box for branches
     this.depth = 0;
     this.aabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-    // Left should always be occupied..?
+    // Branches must have two valid children
     this.left = null;
-    // If a right is present, this is a branch
     this.right = null;
     this.IsLeaf = function() {
         return (this.left === null && this.right === null);
@@ -209,11 +215,11 @@ function BvhNode(bvh, parentNode) {
 		if (y < this.aabb.minY || y > this.aabb.maxY) { return false; }
 		return true;
     };
-    this.VsAABB = (minX, minY, maxX, maxY) => {
+    /*this.VsAABB = (minX, minY, maxX, maxY) => {
 		if (x < this.aabb.minX || x > this.aabb.maxX) { return false; }
 		if (y < this.aabb.minY || y > this.aabb.maxY) { return false; }
 		return true;
-	};
+	};*/
     // attached external ref
 	// ...I mean, it's javascript, so you can do it where you like but
 	// here would be consistent.
@@ -224,7 +230,7 @@ function Bvh() {
     this.root = null;
     this.nextNodeId = 0;
     this.depth = 0;
-    this.padding = 0;
+    this.padding = 16;
     this.Clear = () => {
         this.root = null;
         this.nextNodeId = 0;

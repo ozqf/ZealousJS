@@ -240,34 +240,52 @@ function Bvh() {
         // Explore tree until a node to split is found
         return BvhInsert(this, this.root, node);
     };
-	
-	this.QueryAABB = (queryAABB) => {
+
+    this.TotalVolume = () => {
+        let size = 0;
+        this.Traverse((node) => {
+            size += CalcAABBVolume(node.aabb);
+        });
+        return size;
+    }
+
+    // Visit entire tree, invoking the given callback for every node
+    this.Traverse = (callback) => {
+        if (callback === undefined || callback === null) { return; }
+        if (this.root === null) { return; }
+        let stack = [];
+        stack.push(this.root);
+        while (stack.length > 0) {
+            let node = stack.pop();
+            callback(node);
+            // Visit children
+            if (node.IsLeaf()) { continue; }
+            stack.push(node.left);
+            stack.push(node.right);
+        }
+    }
+    
+    // Return a list of leaves overlapping the given AABB
+	this.QueryAABB = (aabb) => {
         let leaves = []; // results
         if (this.root === null) { return leaves; }
-        if (!OverlapAABBs(queryAABB, this.root.aabb)) { return leaves; }
-
+        if (!OverlapAABBs(aabb, this.root.aabb)) { return leaves; }
         let stack = []; // list of nodes to examine
         stack.push(this.root);
         
         while (stack.length > 0) {
             let node = stack.pop();
-            if (!OverlapAABBs(queryAABB, node.aabb)) {
-                continue;
-            }
-
             if (node.IsLeaf()) {
                 leaves.push(node);
                 continue;
             }
-            stack.push(node.left);
-            stack.push(node.right);
-
-            // if (OverlapAABBs(queryAABB, node.left.aabb)) {
-            //     stack.push(node.left);
-            // }
-            // if (OverlapAABBs(queryAABB, node.right.aabb)) {
-            //     stack.push(node.right);
-            // }
+            // Visit children
+            if (OverlapAABBs(aabb, node.left.aabb)) {
+                stack.push(node.left);
+            }
+            if (OverlapAABBs(aabb, node.right.aabb)) {
+                stack.push(node.right);
+            }
         }
 		return leaves;
 	};

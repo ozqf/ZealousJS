@@ -40,13 +40,12 @@
 					value="64"
 					oninput="HandleQueryScaleInput(this.value)"
                     >
-                Draw Tree
+                Continuous
                 <input
                     type="checkbox"
-
+                    value="false"
+                    onchange="HandleToggleContinous(this)"
                 >
-                <div id="treeStats"></div>
-                <div id="debugText"></div>
             </div>
             <canvas
                 oncontextmenu="return false"
@@ -55,6 +54,8 @@
                 width="550px"
                 height="450px"></canvas>
             <br>
+            <div id="treeStats"></div>
+            <div id="debugText"></div>
             <div id="treeAnalysisOutput"></div>
             <!-- <canvas
                 id="canvas2"
@@ -94,7 +95,53 @@ let cursorId = -1;
 let treeStats = "";
 let debugText = "";
 let peakVisits = 0;
-let playing = true;
+
+let bvhSettings = {
+    continuous: false,
+    playing: true,
+    shuffle: false,
+    sort: false,
+    drawTree: true
+};
+
+////////////////////////////////////////////////////////////////////
+// UI handlers
+////////////////////////////////////////////////////////////////////
+function HandleTimescaleInput(timeScale) {
+	//console.log(`Timescale ${timeScale}`);
+	world.timeScale = parseInt(timeScale) / 100;
+}
+
+function HandleQueryScaleInput(scale) {
+    let cursor = world.FindEntById(cursorId);
+	if (cursor) {
+        cursor.radius = parseInt(scale);
+        cursor.halfWidth = parseInt(scale);
+        cursor.halfHeight = parseInt(scale);
+        console.log(`Cursor ${cursor.halfWidth} by ${cursor.halfHeight}`);
+    }
+}
+
+function HandleToggleContinous(ele) { bvhSettings.continuous = ele.checked; }
+function HandleShuffleChange(ele) { bvhSettings.shuffle = ele.checked; }
+function HandleSortChange(ele) { bvhSettings.sort = ele.checked; }
+
+function SetDebugText(str) {
+    debugText = str;
+    let div = document.getElementById("debugText");
+    div.innerHTML = debugText;
+}
+
+function SetTreeStats(str) {
+    treeStats = str;
+    let div = document.getElementById("treeStats");
+    div.innerHTML = treeStats;
+}
+
+function SetTreeAnalysis(str) {
+    let div = document.getElementById("treeAnalysisOutput");
+    div.innerHTML = str;
+}
 
 ////////////////////////////////////////////////////////////////////
 // Utils
@@ -117,36 +164,6 @@ function Box2AABB(box) {
         maxX: box.x + box.hw,
         maxY: box.y + box.hh
     };
-}
-
-function SetDebugText(str) {
-    debugText = str;
-    let div = document.getElementById("debugText");
-    div.innerHTML = debugText;
-}
-
-function SetTreeStats(str) {
-    treeStats = str;
-    let div = document.getElementById("treeStats");
-    div.innerHTML = treeStats;
-}
-
-function SetTreeAnalysis(str) {
-    let div = document.getElementById("treeAnalysisOutput");
-    div.innerHTML = str;
-}
-
-function HandleTimescaleInput(timeScale) {
-	console.log(`Timescale ${timeScale}`);
-	world.timeScale = timeScale / 100;
-}
-
-function HandleQueryScaleInput(scale) {
-    let cursor = world.FindEntById(cursorId);
-	if (cursor) {
-        cursor.radius = scale;
-        console.log(`Query radius ${cursor.radius}`);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -229,7 +246,7 @@ function WorldTickCallback(gs, input, deltaTime) {
         outlines[i].depth = 50;
     }
 
-    if (playing) {
+    if (bvhSettings.playing) {
         gs.StepShapes(boxes, deltaTime);
         RebuildTree();
         gs.dirty = true;
@@ -270,18 +287,14 @@ function WorldTickCallback(gs, input, deltaTime) {
         }
     }
 
-    let queryAABB = {
-        minX: cursor.pos.x - cursor.radius,
-        maxX: cursor.pos.x + cursor.radius,
-        minY: cursor.pos.y - cursor.radius,
-        maxY: cursor.pos.y + cursor.radius
-    };
-    console.log(`Query area ${queryAABB.minX}, ${queryAABB.maxX} to ${queryAABB.minY}, ${queryAABB.maxY}`);
+    let queryAABB = cursor.ToAABB();
+
+    //console.log(`Query area ${queryAABB.minX}, ${queryAABB.minY} to ${queryAABB.maxX}, ${queryAABB.maxY}`);
     let aabbLeaves = gs.bvh.QueryAABB(queryAABB);
     if (aabbLeaves.length > 0) {
-        let str = `Search Radius ${cursor.radius} Shapes: ${aabbLeaves.map(x => x.id).join(`, `)}`;
+        let str = `Search Radius ${cursor.radius} Shapes: ${aabbLeaves.map(x => x.userData).join(`, `)}`;
         SetTreeAnalysis(str);
-    }else {
+    } else {
         SetTreeAnalysis("");
     }
     for (let i = aabbLeaves.length - 1; i >= 0; --i) {
@@ -435,31 +448,24 @@ function BuildBvhOverShapes(gs) {
     gs.bvh = bvh;
     peakVisits = 0;
     let shapes = gs.FindAllByTag(TAG_BOXES);
-    // Shuffle shapes to rearrange insertion order
-    // (improves tree balance)
-    //Shuffle(shapes);
-    //SortShapes(shapes);
+    if (bvhSettings.shuffle) {
+        // Shuffle shapes to rearrange insertion order
+        // (improves tree balance)
+        Shuffle(shapes);
+    }
+    if (bvhSettings.sort) {
+        SortShapes(shapes);
+    }
     let numShapes = shapes.length;
     for (let i = 0; i < numShapes; ++i) {
         let shape = shapes[i];
         let node = Shape2Node(bvh, shape);
         bvh.Insert(node);
-        /*
-        if (bvh.root === null) {
-            bvh.root = node;
-            node.depth = 1;
-            continue;
-        }
-
-        let queryNode = bvh.root;
-        // Explore tree until a node to split is found
-        BvhInsert(bvh, queryNode, node);
-        */
     }
     let numNodes = numShapes + (numShapes - 1);
     // gs.bvh.nextNodeId
-    let stats = `BVH Stats: ${numShapes} shapes, `;
-    stats += `${gs.bvh.nextNodeId} nodes (expected ${numNodes}), ${bvh.depth} height`;
+    let stats = `BVH Stats: Leaves: ${numShapes} `;
+    stats += `Nodes: ${gs.bvh.nextNodeId}, Total volume: ${Math.ceil(bvh.TotalVolume())} Height: ${bvh.depth}`;
     SetTreeStats(stats);
     return bvh;
 }
@@ -475,8 +481,6 @@ function AddBvhNodeOutline(gs, node) {
     outline.tag = TAG_BVH_OUTLINE;
     if (node.parent) {
         // Draw line between parent and self centroid
-        //LineCtor(id, startX, startY, endX, endY, colour)
-        
         let a = node.parent.aabb;
         let b = node.aabb;
         
@@ -497,14 +501,10 @@ function DrawBvh(gs, bvh) {
     gs.RemoveAllByTag(TAG_BVH_OUTLINE);
     let numNodes = 0;
     // Build display outlines
-    if (gs.bvh.root) {
-        RecursiveWalk(gs.bvh.root, (node) => {
-            AddBvhNodeOutline(gs, node);
-            numNodes++;
-        });
-    }
-    
-    //console.log(`Drawing ${numNodes} tree nodes`);
+    gs.bvh.Traverse(node => {
+        AddBvhNodeOutline(gs, node);
+        numNodes++;
+    });
 }
 
 function CreateGraphForTree(bvh) {
@@ -563,7 +563,8 @@ function InitWorld(canvasElementId) {
         }
     }
     
-	let cursor = gs.AddCircle(0, 0, 32, '#00ffff');
+    //let cursor = gs.AddCircle(0, 0, 32, '#00ffff');
+    let cursor = gs.AddOutline(0, 0, 32, 32, '#00ffff');
 	cursorId = cursor.id;
     // init a player object for giggles
 	//let plyr = gs.AddBox(

@@ -79,7 +79,7 @@ function BvhInsert(bvh, queryNode, newNode) {
         // split into branch and append leaves
         // queryNode becomes a branch
         // append copy of queryNode + new node as leaves
-        let sibling = new BvhNode(bvh, queryNode);
+        let sibling = new HeapBvhNode(bvh, queryNode);
         sibling.userData = queryNode.userData;
         queryNode.userData = null;
         
@@ -195,7 +195,7 @@ function RecursiveWalk(node, callback) {
 ////////////////////////////////////////////////////////////////////
 // Classes
 ////////////////////////////////////////////////////////////////////
-function BvhNode(bvh, parentNode) {
+function HeapBvhNode(bvh, parentNode) {
     this.parent = parentNode;
     this.id = ++bvh.nextNodeId;
     //console.log(`Created node ${this.id}`);
@@ -226,7 +226,7 @@ function BvhNode(bvh, parentNode) {
     this.userData = null;
 }
 
-function Bvh() {
+function HeapBvh() {
     this.root = null;
     this.nextNodeId = 0;
     this.depth = 0;

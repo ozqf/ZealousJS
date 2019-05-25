@@ -343,7 +343,9 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		});
 		for (let i = 0; i < shapes.length; ++i) {
 			let obj = shapes[i];
-			obj.Draw(ctx, camera);
+			if (obj.Draw !== null) {
+				obj.Draw(ctx, camera);
+			}
 		}
 	};
 

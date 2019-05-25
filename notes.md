@@ -1,3 +1,8 @@
-Branch – Our branches always have exactly two children (known as left and right) and are assigned an AABB that is large enough to contain all of it’s descendants.
-Leaf – Our leaves are associated with a game world object and through that have an AABB. A leaf’s AABB must fit entirely within it’s parents AABB and due to how our branches are defined that means it fits in every ancestors AABB.
-Root – Our root may be a branch or a leaf
+
+# Engine considerations:
+* Scene/Entity format for:
+    * Quick implementation
+    * Quick extending
+    * Instanced so multiple scenes can exist on one page
+
+# 

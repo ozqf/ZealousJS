@@ -19,64 +19,41 @@
     </style>
     <body>
         <div class="column">
-            <div class="row">
-                <button onclick="RebuildTree()">Rebuild</button>
-                <button onclick="ClearScene()">Clear</button>
-                Timescale
-                <input
-					type="range"
-					name="Playing"
-					min="0"
-					max="100"
-					value="100"
-					oninput="HandleTimescaleInput(this.value)"
-                    >
-                Query Area
-                <input
-					type="range"
-					name="QueryScale"
-					min="1"
-					max="128"
-					value="64"
-					oninput="HandleQueryScaleInput(this.value)"
-                    >
-                Continuous
-                <input
-                    type="checkbox"
-                    checked="true"
-                    onchange="HandleToggleContinous(this)"
-                >
+            <div>Base</div>
+            <div id="demoContainer">
+
             </div>
-            <canvas
-                oncontextmenu="return false"
-                id="canvas"
-                class="world-canvas"
-                width="550px"
-                height="450px"></canvas>
-            <br>
-            <div id="treeStats"></div>
-            <div id="debugText"></div>
-            <div id="treeAnalysisOutput"></div>
-            <!-- <canvas
-                id="canvas2"
-                class="canvasContainer"
-                width="550px"
-                height="64px"></canvas> -->
         </div>
-        
         <script>
 ///////////////////////////////////////////////////////////////////
 "use strict";
 
 // Define global info
 let page = {
-    canvasADiv: null,
+    demoDiv: null,
     uiDiv: null,
+    currentDemo: null,
     demos: []
 };
 
+page.demoDiv = document.getElementById("demoContainer");
+
 function RegisterDemo(name, constructor) {
     page.demos.push({ name: name, ctor: constructor });
+}
+
+function ChangeDemo(name) {
+    let demo = page.demos.find(x => x.name === name);
+    if (demo === undefined) {
+        console.log(`Demo ${name} is undefined`);
+        return;
+    }
+    if (page.currentDemo !== null) {
+        page.currentDemo.Destroy();
+        page.currentDemo = null;
+    }
+    page.currentDemo = new demo.ctor(page.demoDiv);
+
 }
 
 ///////////////////////////////////////////////////////////////////        
@@ -89,6 +66,7 @@ function RegisterDemo(name, constructor) {
 ///////////////////////////////////////////////////////////////////
 
 // init first demo
+ChangeDemo("BVH Demo");
 
 ///////////////////////////////////////////////////////////////////
         </script>

@@ -18,10 +18,31 @@
         max-width: 550px;
         max-height: 450px;
     }
+    body {
+        background-color: #222222;
+        color: green;
+    }
+    button {
+        background-color: #005500;
+        border: none;
+        color: white;
+        padding: 8px, 16px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+    }
+    button:hover {
+        background-color: #009900;
+    }
     </style>
     <body>
         <div class="column">
             <div>Base</div>
+            <div class="row">
+                <button onclick="ChangeDemo('Title')">Title</button>
+                <button onclick="ChangeDemo('BVH Demo')">BVH</button>
+            </div>
             <div id="demoContainer">
 
             </div>
@@ -63,12 +84,14 @@ function ChangeDemo(name) {
         <!-- #Include -->
         <script src="./src/common/zealous.js"></script>
         <script src="./src/common/HeapBVH.js"></script>
+        <script src="./src/demos/title.js"></script>
         <script src="./src/demos/bvh_test.js"></script>
         <script>
 ///////////////////////////////////////////////////////////////////
 
 // init first demo
-ChangeDemo("BVH Demo");
+//ChangeDemo("BVH Demo");
+ChangeDemo("Title");
 
 ///////////////////////////////////////////////////////////////////
         </script>

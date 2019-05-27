@@ -469,6 +469,16 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	canvas.addEventListener("click", this.HandleMouseClick, true);
 	canvas.addEventListener("contextmenu", this.HandleContextMenu, true);
 	
+	this.Destroy = () => {
+		console.log(`Destroy scene`);
+		canvas.removeEventListener("focusout", this.HandleLoseFocus);
+		canvas.removeEventListener("focusin", this.HandleGetFocus);
+		canvas.removeEventListener("mousemove", this.HandleMouseMove);
+		canvas.removeEventListener("click", this.HandleMouseClick);
+		canvas.removeEventListener("contextmenu", this.HandleContextMenu);
+		
+	};
+
 	///////////////////////////////////////////////////////////////////
 	// Startup
 	///////////////////////////////////////////////////////////////////

@@ -461,6 +461,7 @@ function Shape2Node(bvh, shape) {
     node.userData = shape.id;
     return node;
 }
+
 function BuildBvhOverShapes(gs) {
     if (gs.bvh) {
         gs.bvh.Clear();

@@ -21,12 +21,12 @@ function TitleDemo(rootDiv) {
     ctx.fillRect(0, 0, w, h);
     console.log(`Canvas: ${w}, ${h}`);
 
-    let fireCanvas = ctx.createImageData(32, 32);
+    let fireCanvas = ctx.createImageData(128, 128);
     let data = fireCanvas.data;
     for (let i = 0; i < data.length; i += 4) {
-        data[i] = 0;
+        data[i] = 255;
         data[i + 1] = 255;
-        data[i + 2] = 0;
+        data[i + 2] = 255;
         data[i + 3] = 255;
     }
 
@@ -48,22 +48,60 @@ function TitleDemo(rootDiv) {
         { r: 25, g: 25, b: 25 }
     ];
 
-    let StepPixel = (imgData, px, py) => {
-        let i = PixelToIndex(px, py, imgData.width, imgData.height);
-        console.log(`Set pixel ${i} - ${px}, ${py}`);
-        imgData.data[i] = 255;
-        imgData.data[i + 1] = 0;
-        imgData.data[i + 2] = 0;
-        imgData.data[i + 3] = 255;
+    let FindColourIndex = (red) => {
+        for (let i = 0; i < fireColours.length; ++i) {
+            if (fireColours[i].r === red) { return i; }
+        }
+        // hmm ?
+        return 999999;
     };
-    StepPixel(fireCanvas, 0, 0);
-    StepPixel(fireCanvas, 1, 0);
-    StepPixel(fireCanvas, 2, 0);
-    StepPixel(fireCanvas, 3, 0);
-    StepPixel(fireCanvas, 4, 0);
+
+    let SetPixel = (data, i, r, g, b, a) => {
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
+        data[i + 3] = a;
+    }
+
+    let StepPixel = (imgData, px, py) => {
+        let i;
+        let w = imgData.width;
+        let h = imgData.height;
+        let r, g, b, a;
+        if (px <= 0) {
+            // top of canvas, can't do anything
+            i = PixelToIndex(px, py, w, h);
+            SetPixel(imgData.data, i, 0, 0, 0, 0);
+        } else {
+            // Grow
+            let currentRed = imgData.data[i];
+            let colourIndex = FindColourIndex(currentRed);
+            // step colour forward
+            colourIndex++;
+            if (colourIndex >= fireColours.length) { 
+                // Clear
+                i = PixelToIndex(px, py, w, h);
+                SetPixel(imgData.data, i, 0, 0, 0, 0);
+            }
+            else {
+                i = PixelToIndex(px, py - 1, w, h);
+                let c = fireColours[colourIndex];
+                SetPixel(imgdata.data, i, c.r, c.g, c.b, 255);
+            }
+        }
+    };
 
     // Put fire
     ctx.putImageData(fireCanvas, 64, 64);
+
+    setInterval(() => {
+        for (let y = 0; y < fireCanvas.height; ++y) {
+            for (let x = 0; x < fireCanvas.width; ++x) {
+                StepPixel(fireCanvas, x, y);
+            }
+        }
+        ctx.putImageData(fireCanvas, 64, 64);
+    }, 1000 / 10);
 
     this.Destroy = () => {
 

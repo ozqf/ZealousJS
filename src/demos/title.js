@@ -7,19 +7,17 @@ function TitleDemo(rootDiv) {
     console.log("Start Title");
 
     rootDiv.innerHTML =
-    `<canvas id="titleCanvas" oncontextmenu="return false"></canvas>`;
+    `<canvas id="titleCanvas" style="width: 640px;height: 480px;" oncontextmenu="return false"></canvas>`;
     let canvas = document.getElementById("titleCanvas");
-    let canvasSize = { x: 550, y: 450 };
+    let canvasSize = { x: 160, y: 120 };
     canvas.setAttribute("width", `${canvasSize.x}`);
     canvas.setAttribute("height", `${canvasSize.y}`);
 
     let ctx = canvas.getContext("2d");
-    let w = canvas.clientWidth;
-    let h = canvas.clientHeight;
+    let w = canvasSize.x;//canvas.clientWidth;
+    let h = canvasSize.y;//canvas.clientHeight;
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, w, h);
-    
-    console.log(`Canvas: ${w}, ${h}`);
 
     let fireColours = [
         { r: 0, g: 0, b: 0, a: 255 },
@@ -83,6 +81,7 @@ function TitleDemo(rootDiv) {
         }
     }
 
+    // Prepare fire canvas and buffer
     let fireCanvas = ctx.createImageData(w, h);
     let totalPixels = fireCanvas.width * fireCanvas.height;
     let fire = new Array(totalPixels).fill(0);
@@ -93,15 +92,13 @@ function TitleDemo(rootDiv) {
         fire[i] = whiteIndex;
     }
     
+    // Frame loop
     let fps = 30;
     let tickTime = 1000 / fps;
     let intervalHandle = setInterval(() => {
-        // Frame loop
         TickFire(tickTime, fire, fireCanvas.width, fireCanvas.height);
         CopyFireArray(fireCanvas, fire);
-        
         ctx.putImageData(fireCanvas, 0, 0);
-        ctx.scale(2, 2);
 
     }, tickTime);
 

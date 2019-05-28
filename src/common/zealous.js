@@ -471,6 +471,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 	
 	this.Destroy = () => {
 		console.log(`Destroy scene`);
+		clearInterval(intervalHandle);
 		canvas.removeEventListener("focusout", this.HandleLoseFocus);
 		canvas.removeEventListener("focusin", this.HandleGetFocus);
 		canvas.removeEventListener("mousemove", this.HandleMouseMove);
@@ -478,7 +479,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		canvas.removeEventListener("contextmenu", this.HandleContextMenu);
 		
 	};
-
+	let intervalHandle;
 	///////////////////////////////////////////////////////////////////
 	// Startup
 	///////////////////////////////////////////////////////////////////
@@ -487,7 +488,7 @@ function CreateEngineInstance(canvasElementId, preTickCallback) {
 		// DT is in seconds, interval has to be milliseconds
 		let deltaTime = 1 / fps;
 		let interval = 1000 / fps;
-        setInterval(() => {
+        intervalHandle = setInterval(() => {
 			this.Tick(deltaTime * this.timeScale);
 		}, interval);
 	}

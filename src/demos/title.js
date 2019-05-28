@@ -9,9 +9,9 @@ function TitleDemo(rootDiv) {
     rootDiv.innerHTML =
     `<canvas id="titleCanvas" oncontextmenu="return false"></canvas>`;
     let canvas = document.getElementById("titleCanvas");
-
-    canvas.setAttribute("width", "550px");
-    canvas.setAttribute("height", "450px");
+    let canvasSize = { x: 550, y: 450 };
+    canvas.setAttribute("width", `${canvasSize.x}`);
+    canvas.setAttribute("height", `${canvasSize.y}`);
 
     let ctx = canvas.getContext("2d");
     let w = canvas.clientWidth;
@@ -83,7 +83,7 @@ function TitleDemo(rootDiv) {
         }
     }
 
-    let fireCanvas = ctx.createImageData(550, 64);
+    let fireCanvas = ctx.createImageData(w, h);
     let totalPixels = fireCanvas.width * fireCanvas.height;
     let fire = new Array(totalPixels).fill(0);
     // Fill bottom row with white (top most index)
@@ -93,19 +93,19 @@ function TitleDemo(rootDiv) {
         fire[i] = whiteIndex;
     }
     
-    let fps = 20;
+    let fps = 30;
     let tickTime = 1000 / fps;
-    setInterval(() => {
+    let intervalHandle = setInterval(() => {
         // Frame loop
         TickFire(tickTime, fire, fireCanvas.width, fireCanvas.height);
         CopyFireArray(fireCanvas, fire);
         
-        ctx.putImageData(fireCanvas, 0, 256);
+        ctx.putImageData(fireCanvas, 0, 0);
         ctx.scale(2, 2);
 
     }, tickTime);
 
     this.Destroy = () => {
-
+        clearInterval(intervalHandle);
     };
 }

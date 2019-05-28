@@ -7,10 +7,9 @@ function TitleDemo(rootDiv) {
     console.log("Start Title");
 
     rootDiv.innerHTML =
-    `<canvas id="canvas" oncontextmenu="return false"></canvas>`;
-    let canvas = document.getElementById("canvas");
+    `<canvas id="titleCanvas" oncontextmenu="return false"></canvas>`;
+    let canvas = document.getElementById("titleCanvas");
 
-    //canvas.setAttribute("class", "world-canvas");
     canvas.setAttribute("width", "550px");
     canvas.setAttribute("height", "450px");
 
@@ -19,91 +18,94 @@ function TitleDemo(rootDiv) {
     let h = canvas.clientHeight;
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, w, h);
+    
     console.log(`Canvas: ${w}, ${h}`);
 
-    let fireCanvas = ctx.createImageData(128, 128);
-    let data = fireCanvas.data;
-    for (let i = 0; i < data.length; i += 4) {
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-        data[i + 3] = 255;
-    }
-
-    let PixelToIndex = (x, y, width, height) => {
-        return (x + (y * width))  * 4;
-        //return (x * height) + y;
-    }
-    
     let fireColours = [
-        { r: 255, g: 255, b: 255 },
-        { r: 225, g: 225, b: 225 },
-        { r: 200, g: 200, b: 200 },
-        { r: 175, g: 175, b: 175 },
-        { r: 150, g: 150, b: 150 },
-        { r: 125, g: 125, b: 125 },
-        { r: 100, g: 100, b: 100 },
-        { r: 75, g: 75, b: 75 },
-        { r: 50, g: 50, b: 50 },
-        { r: 25, g: 25, b: 25 }
+        { r: 0, g: 0, b: 0, a: 255 },
+        { r: 25, g: 0, b: 0, a: 255 },
+        { r: 25, g: 0, b: 0, a: 255 },
+        { r: 50, g: 0, b: 0, a: 255 },
+        { r: 50, g: 0, b: 0, a: 255 },
+        { r: 75, g: 25, b: 0, a: 255 },
+        { r: 75, g: 25, b: 0, a: 255 },
+        { r: 100, g: 50, b: 0, a: 255 },
+        { r: 100, g: 50, b: 0, a: 255 },
+        { r: 200, g: 75, b: 0, a: 255 },
+        { r: 200, g: 75, b: 0, a: 255 },
+        { r: 200, g: 100, b: 0, a: 255 },
+        { r: 200, g: 100, b: 0, a: 255 },
+        { r: 200, g: 150, b: 50, a: 255 },
+        { r: 200, g: 150, b: 50, a: 255 },
+        { r: 255, g: 175, b: 100, a: 255 },
+        { r: 255, g: 175, b: 100, a: 255 },
+        { r: 255, g: 200, b: 150, a: 255 },
+        { r: 255, g: 200, b: 150, a: 255 },
+        { r: 255, g: 225, b: 200, a: 255 },
+        { r: 255, g: 225, b: 200, a: 255 },
+        { r: 225, g: 225, b: 255, a: 255 },
+        { r: 225, g: 225, b: 255, a: 255 }
     ];
 
-    let FindColourIndex = (red) => {
-        for (let i = 0; i < fireColours.length; ++i) {
-            if (fireColours[i].r === red) { return i; }
-        }
-        // hmm ?
-        return 999999;
-    };
-
-    let SetPixel = (data, i, r, g, b, a) => {
-        data[i] = r;
-        data[i + 1] = g;
-        data[i + 2] = b;
-        data[i + 3] = a;
+    let PixelToIndex = (x, y, width, height) => {
+        return (x + (y * width));
     }
 
-    let StepPixel = (imgData, px, py) => {
-        let i;
-        let w = imgData.width;
-        let h = imgData.height;
-        let r, g, b, a;
-        if (px <= 0) {
-            // top of canvas, can't do anything
-            i = PixelToIndex(px, py, w, h);
-            SetPixel(imgData.data, i, 0, 0, 0, 0);
-        } else {
-            // Grow
-            let currentRed = imgData.data[i];
-            let colourIndex = FindColourIndex(currentRed);
-            // step colour forward
-            colourIndex++;
-            if (colourIndex >= fireColours.length) { 
-                // Clear
-                i = PixelToIndex(px, py, w, h);
-                SetPixel(imgData.data, i, 0, 0, 0, 0);
-            }
-            else {
-                i = PixelToIndex(px, py - 1, w, h);
-                let c = fireColours[colourIndex];
-                SetPixel(imgdata.data, i, c.r, c.g, c.b, 255);
+    let TickFire = (deltaTime, fire, fireWidth, fireHeight) => {
+        // don't sample the bottom row as it is the 'seed' for the fire and must
+        // stay white
+        for (let y = 0; y < fireHeight - 1; ++y) {
+            for (let x = 0; x < fireWidth; ++x) {
+                // this pixel involves sampling the pixel below
+                let i = PixelToIndex(x, y + 1, fireWidth, fireHeight);
+                let source = fire[i];
+                let selfIndex = PixelToIndex(x, y, fireWidth, fireHeight);
+                if (Math.random() > 0.5) { source--;  }
+                
+                if (source < 0) { source = 0; }
+                fire[selfIndex] = source;
+
             }
         }
-    };
+    }
 
-    // Put fire
-    ctx.putImageData(fireCanvas, 64, 64);
+    let CopyFireArray = (imgData, arr) => {
+        let l = arr.length;
+        let bmp = imgData.data;
+        // No bounds checking or anything here!
+        for (let i = 0; i < l; ++i) {
+            let j = i * 4;
+            let c = fireColours[arr[i]];
+            bmp[j] = c.r;
+            bmp[j + 1] = c.g;
+            bmp[j + 2] = c.b;
+            bmp[j + 3] = c.a;
+        }
+    }
 
+    let fireCanvas = ctx.createImageData(550, 64);
+    let totalPixels = fireCanvas.width * fireCanvas.height;
+    let fire = new Array(totalPixels).fill(0);
+    // Fill bottom row with white (top most index)
+    let whiteIndex = fireColours.length - 1;
+    let i = PixelToIndex(0, fireCanvas.height - 1, fireCanvas.width, fireCanvas.height);
+    for (; i < totalPixels; ++i) {
+        fire[i] = whiteIndex;
+    }
+    
+    let fps = 20;
+    let tickTime = 1000 / fps;
     setInterval(() => {
-        for (let y = 0; y < fireCanvas.height; ++y) {
-            for (let x = 0; x < fireCanvas.width; ++x) {
-                StepPixel(fireCanvas, x, y);
-            }
-        }
-        ctx.putImageData(fireCanvas, 64, 64);
-    }, 1000 / 10);
+        // Frame loop
+        TickFire(tickTime, fire, fireCanvas.width, fireCanvas.height);
+        CopyFireArray(fireCanvas, fire);
+        
+        ctx.putImageData(fireCanvas, 0, 256);
+        ctx.scale(2, 2);
+
+    }, tickTime);
 
     this.Destroy = () => {
 
-    }
+    };
 }

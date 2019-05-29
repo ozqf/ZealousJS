@@ -158,9 +158,9 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 // MASTER GAME CONSTRUCTOR
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-function CanvasScene(canvasElementId, preTickCallback) {
+function CanvasScene(canvas, preTickCallback) {
 	// Closure - private GameState  vars
-    let canvas = document.getElementById(canvasElementId);
+    //let canvas = document.getElementById(canvasElementId);
 	let ctx = canvas.getContext("2d");
 
 	let keys = {
@@ -279,7 +279,7 @@ function CanvasScene(canvasElementId, preTickCallback) {
 		if (id === 0) { return; }
 		let avatar = this.FindEntById(id);
 		if (avatar === null) {
-			console.log(`No player avatar ${id}!`);
+			console.warn(`No player avatar ${id}!`);
 			return;
 		}
 		let speed = 10;
@@ -400,7 +400,6 @@ function CanvasScene(canvasElementId, preTickCallback) {
 	// Event handlers
 	///////////////////////////////////////////////////////////////////
 	this.HandleKeyDown = function(ev) {
-		//console.log(`Key ${ev.keyCode} down`);
 		let k = ev.keyCode;
 		if (k === keys.left) { input.left = true; return; }
 		if (k === keys.right) { input.right = true; return; }
@@ -410,7 +409,6 @@ function CanvasScene(canvasElementId, preTickCallback) {
 	};
 	
 	this.HandleKeyUp = function(ev) {
-		//console.log(`Key ${ev.keyCode} up`);
 		let k = ev.keyCode;
 		if (k === keys.left) { input.left = false; return; }
 		if (k === keys.right) { input.right = false; return; }

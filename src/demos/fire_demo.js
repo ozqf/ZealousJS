@@ -5,13 +5,16 @@ function FireDemo(rootDiv) {
     
     // Init stuff
     console.log("Start Title");
-
+    let w = 160;
+    let h = 120;
+    /*
     rootDiv.innerHTML =
         `<canvas id="titleCanvas" style="width: 640px;height: 480px;" oncontextmenu="return false"></canvas>`;
     let canvas = document.getElementById("titleCanvas");
-    let canvasSize = { x: 160, y: 120 };
-    canvas.setAttribute("width", `${canvasSize.x}`);
-    canvas.setAttribute("height", `${canvasSize.y}`);
+    canvas.setAttribute("width", `${w}`);
+    canvas.setAttribute("height", `${h}`);
+    */
+   let canvas = CreateCanvas(rootDiv, "fireCanvas", 640, 480, w, h);
     // Toggle fullscreen
     canvas.addEventListener("click", (ev) => {
         if (!document.fullscreenElement) {
@@ -26,8 +29,6 @@ function FireDemo(rootDiv) {
     });
     
     let ctx = canvas.getContext("2d");
-    let w = canvasSize.x;//canvas.clientWidth;
-    let h = canvasSize.y;//canvas.clientHeight;
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, w, h);
 

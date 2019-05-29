@@ -9,22 +9,7 @@ function BVHDemo(rootDiv) {
 
     // Init stuff
     console.log("Start BVH Demo");
-
-    rootDiv.innerHTML =
-    `<canvas id="canvas" oncontextmenu="return false"></canvas>`;
-    let canvas = document.getElementById("canvas");
-
-    //canvas.setAttribute("class", "world-canvas");
-    canvas.setAttribute("width", "550px");
-    canvas.setAttribute("height", "450px");
-
-    let ctx = canvas.getContext("2d");
-    let w = canvas.clientWidth;
-    let h = canvas.clientHeight;
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, w, h);
-    console.log(`Canvas: ${w}, ${h}`);
-
+    
     //////////////////////////////////////////////////////////////
     // #defines
     //////////////////////////////////////////////////////////////
@@ -237,7 +222,14 @@ function BVHDemo(rootDiv) {
     ////////////////////////////////////////////////////////////////////
     // Init
     ////////////////////////////////////////////////////////////////////
-    world = new CanvasScene("canvas", WorldTickCallback);
+    let canvas = CreateCanvas(rootDiv, "bvhDemo", 640, 480, 640, 480);
+    let ctx = canvas.getContext("2d");
+    let w = canvas.clientWidth;
+    let h = canvas.clientHeight;
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, w, h);
+
+    world = new CanvasScene(canvas, WorldTickCallback);
     world.Start(WORLD_FRAME_RATE);
 
     cursor = world.AddOutline(0, 0, 32, 32, '#00ffff');

@@ -7,7 +7,7 @@ function FireDemo(rootDiv) {
     console.log("Start Title");
 
     rootDiv.innerHTML =
-    `<canvas id="titleCanvas" style="width: 640px;height: 480px;" oncontextmenu="return false"></canvas>`;
+        `<canvas id="titleCanvas" style="width: 640px;height: 480px;" oncontextmenu="return false"></canvas>`;
     let canvas = document.getElementById("titleCanvas");
     let canvasSize = { x: 160, y: 120 };
     canvas.setAttribute("width", `${canvasSize.x}`);
@@ -25,7 +25,6 @@ function FireDemo(rootDiv) {
         
     });
     
-
     let ctx = canvas.getContext("2d");
     let w = canvasSize.x;//canvas.clientWidth;
     let h = canvasSize.y;//canvas.clientHeight;

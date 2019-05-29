@@ -158,7 +158,7 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 // MASTER GAME CONSTRUCTOR
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-function CreateEngineInstance(canvasElementId, preTickCallback) {
+function CanvasScene(canvasElementId, preTickCallback) {
 	// Closure - private GameState  vars
     let canvas = document.getElementById(canvasElementId);
 	let ctx = canvas.getContext("2d");

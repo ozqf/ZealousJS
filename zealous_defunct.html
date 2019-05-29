@@ -535,7 +535,7 @@ function CreateGraphForTree(bvh) {
 
 // Create a bunch of boxes around for which the BVH will be constructed
 function InitWorld(canvasElementId) {
-	let gs = new CreateEngineInstance(canvasElementId, WorldTickCallback);
+	let gs = new CanvasScene(canvasElementId, WorldTickCallback);
 	//gs.CreateGrid(100);
     gs.Start(WORLD_FRAME_RATE);
     gs.bvh = new HeapBvh();
@@ -597,7 +597,7 @@ function InitWorld(canvasElementId) {
 
 // Create a canvas scene for displaying the BVH tree as a graph
 function InitGraph(canvasElementId) {
-    let gs = new CreateEngineInstance(canvasElementId, GraphTickCallback);
+    let gs = new CanvasScene(canvasElementId, GraphTickCallback);
     gs.AddBox(300, 200, 64, 32, '#ffffff');
     gs.Start(2);
     return gs;

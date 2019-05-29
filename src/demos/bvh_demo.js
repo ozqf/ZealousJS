@@ -237,7 +237,7 @@ function BVHDemo(rootDiv) {
     ////////////////////////////////////////////////////////////////////
     // Init
     ////////////////////////////////////////////////////////////////////
-    world = new CreateEngineInstance("canvas", WorldTickCallback);
+    world = new CanvasScene("canvas", WorldTickCallback);
     world.Start(WORLD_FRAME_RATE);
 
     cursor = world.AddOutline(0, 0, 32, 32, '#00ffff');

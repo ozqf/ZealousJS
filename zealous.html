@@ -10,6 +10,10 @@
         flex-direction: column;
         justify-content:flex-start;
     }
+    .centered {
+        display: flex;
+        justify-content: center;
+    }
     .world-canvas {
         width: 550px;
         height: 450px;
@@ -37,13 +41,13 @@
     }
     </style>
     <body>
-        <div class="column">
-            <div>Sketches</div>
-            <div class="row">
+        <div class="column centered">
+            <div class="centered">Sketches</div>
+            <div class="row centered">
                 <button title="Landing screen" onclick="ChangeDemo('Fire')">Fire</button>
                 <button title="Bounding Volume Hierarchy" onclick="ChangeDemo('BVH Demo')">BVH</button>
             </div>
-            <div id="demoContainer">
+            <div id="demoContainer" class="centered">
 
             </div>
         </div>

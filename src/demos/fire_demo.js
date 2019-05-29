@@ -7,13 +7,6 @@ function FireDemo(rootDiv) {
     console.log("Start Title");
     let w = 160;
     let h = 120;
-    /*
-    rootDiv.innerHTML =
-        `<canvas id="titleCanvas" style="width: 640px;height: 480px;" oncontextmenu="return false"></canvas>`;
-    let canvas = document.getElementById("titleCanvas");
-    canvas.setAttribute("width", `${w}`);
-    canvas.setAttribute("height", `${h}`);
-    */
    let canvas = CreateCanvas(rootDiv, "fireCanvas", 640, 480, w, h);
     // Toggle fullscreen
     canvas.addEventListener("click", (ev) => {
@@ -79,7 +72,6 @@ function FireDemo(rootDiv) {
                 // Set
                 let selfIndex = PixelToIndex(x + xOffset, y, fireWidth, fireHeight);
                 fire[selfIndex] = source;
-
             }
         }
     }

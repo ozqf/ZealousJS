@@ -40,7 +40,7 @@
         <div class="column">
             <div>Sketches</div>
             <div class="row">
-                <button title="Landing screen" onclick="ChangeDemo('Title')">Fire</button>
+                <button title="Landing screen" onclick="ChangeDemo('Fire')">Fire</button>
                 <button title="Bounding Volume Hierarchy" onclick="ChangeDemo('BVH Demo')">BVH</button>
             </div>
             <div id="demoContainer">
@@ -84,14 +84,14 @@ function ChangeDemo(name) {
         <!-- #Include -->
         <script src="./src/common/zealous.js"></script>
         <script src="./src/common/HeapBVH.js"></script>
-        <script src="./src/demos/title.js"></script>
-        <script src="./src/demos/bvh_test.js"></script>
+        <script src="./src/demos/fire_demo.js"></script>
+        <script src="./src/demos/bvh_demo.js"></script>
         <script>
 ///////////////////////////////////////////////////////////////////
 
 // init first demo
 //ChangeDemo("BVH Demo");
-ChangeDemo("Title");
+ChangeDemo("Fire");
 
 ///////////////////////////////////////////////////////////////////
         </script>

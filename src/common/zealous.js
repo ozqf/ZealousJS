@@ -10,6 +10,42 @@ function RandomRange(min, max) {
 	return (Math.random() * (max - min) + min);
 }
 
+function RandomRadians() {
+	return Math.random() * (2 * Math.PI);
+}
+
+function Ent_SimpleMove(gs, ent, deltaTime) {
+	ent.pos.x += (ent.vel.x * gs.pix2metre) * deltaTime;
+	ent.pos.y += (ent.vel.y * gs.pix2metre) * deltaTime;
+}
+
+function Ent_SimplePlayerMove(gs, ent, input, deltaTime) {
+	if (ent === null) { return; }
+	if (input.left) { ent.pos.x -= (ent.speed * gs.pix2metre) * deltaTime; }
+	if (input.right) { ent.pos.x += (ent.speed * gs.pix2metre) * deltaTime; }
+	if (input.up) { ent.pos.y -= (ent.speed * gs.pix2metre) * deltaTime; }
+	if (input.down) { ent.pos.y += (ent.speed * gs.pix2metre) * deltaTime; }
+}
+
+function Ent_BoundaryBounce(boundary, ent) {
+	let vel = ent.vel;
+	if (ent.pos.x > boundary.maxX)
+	{ ent.pos.x = boundary.maxX; vel.x = -vel.x; }
+	if (ent.pos.x < boundary.minX)
+	{ ent.pos.x = boundary.minX; vel.x = -vel.x; }
+	if (ent.pos.y > boundary.maxY)
+	{ ent.pos.y = boundary.maxY; vel.y = -vel.y; }
+	if (ent.pos.y < boundary.minY)
+	{ ent.pos.y = boundary.minY; vel.y = -vel.y; }
+}
+
+function Ent_BoundaryWrap(boundary, ent) {
+	if (ent.pos.x > boundary.maxX) { ent.pos.x = boundary.minX; }
+	if (ent.pos.x < boundary.minX) { ent.pos.x = boundary.maxX; }
+	if (ent.pos.y > boundary.maxY) { ent.pos.y = boundary.minY; }
+	if (ent.pos.y < boundary.minY) { ent.pos.y = boundary.maxY; }
+}
+
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 // TYPE CONSTRUCTORS
@@ -41,6 +77,7 @@ function ZqfInitShapeBase(obj, id, tag, depth, x, y) {
 	obj.externalId = null;
 	obj.pos = new V2(x, y);
 	obj.vel = new V2(0, 0);
+	obj.speed = 0;
 }
 
 function GenericCtor(
@@ -158,7 +195,7 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 // MASTER GAME CONSTRUCTOR
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-function CanvasScene(canvas, preTickCallback) {
+function CanvasScene(canvas, PreTickCallback) {
 	// Closure - private GameState  vars
     //let canvas = document.getElementById(canvasElementId);
 	let ctx = canvas.getContext("2d");
@@ -189,7 +226,6 @@ function CanvasScene(canvas, preTickCallback) {
 	ctx.fillStyle = "#000000ff	";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	
-	let PreTickCallback = preTickCallback;
 	let shapes = [];
 	let input = {
 		mouseOneClick: false,
@@ -197,22 +233,36 @@ function CanvasScene(canvas, preTickCallback) {
 		left: false,
 		right: false
 	};
+
+
+	// PRIVATE
 	let tick = 0;
+	let radians = 0;
+    let rate = 5 * this.deg2rad;
 	
+	// PUBLIC
 	this.dirty = true;
 	this.timeScale = 1;
     this.deg2rad = 3.141593 / 180;
     this.rad2deg = 57.2958;
-    let radians = 0;
-    let rate = 5 * this.deg2rad;
+    
 	let nextEntityId = 1;
 	
 	this.pix2metre = 32;
 
-	this.playerId = 0;
-	
 	this.cursorPos = new V2(0, 0);
+
+	// This marks out the play area boundary
+	// Set to size of canvas by default but can be overridden
+	this.boundary = {
+		minX: 0,
+		minY: 0,
+		maxX: canvas.width,
+		maxY: canvas.height
+	};
 	
+	this.GetInput = () => { return input; };
+
 	////////////////////////////////////////////////////////////
 	// Entity Creation
 	////////////////////////////////////////////////////////////
@@ -263,7 +313,7 @@ function CanvasScene(canvas, preTickCallback) {
 			return true;
 		}
 		return false;
-	}
+	};
 	this.RemoveAllByTag = (tag) => {
 		let count = 0;
 		for (let i = shapes.length - 1; i >= 0; --i) {
@@ -272,21 +322,6 @@ function CanvasScene(canvas, preTickCallback) {
 			count++;
 		}
 		return count;
-	};
-	
-	
-	this.UpdatePlayer = function(id, deltaTime) {
-		if (id === 0) { return; }
-		let avatar = this.FindEntById(id);
-		if (avatar === null) {
-			console.warn(`No player avatar ${id}!`);
-			return;
-		}
-		let speed = 10;
-		if (input.left) { avatar.pos.x -= (speed * this.pix2metre) * deltaTime; }
-		if (input.right) { avatar.pos.x += (speed * this.pix2metre) * deltaTime; }
-		if (input.up) { avatar.pos.y -= (speed * this.pix2metre) * deltaTime; }
-		if (input.down) { avatar.pos.y += (speed * this.pix2metre) * deltaTime; }
 	};
 	
 	///////////////////////////////////////////////////////////////////
@@ -322,7 +357,6 @@ function CanvasScene(canvas, preTickCallback) {
 			PreTickCallback(this, input, deltaTime);
 		}
 		
-		this.UpdatePlayer(this.playerId, deltaTime);
 		this.Draw();
 		// Clear single frame events
 		input.mouseOneClick = false;
@@ -372,6 +406,8 @@ function CanvasScene(canvas, preTickCallback) {
 	///////////////////////////////////////////////////////////////////
 	// Entity Search
 	///////////////////////////////////////////////////////////////////
+	this.GetEntities = () => { return shapes; };
+
 	this.FindEntById = function(id) {
 		let l = shapes.length;
 		for (let i = 0; i < l; ++i) {

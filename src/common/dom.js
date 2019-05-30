@@ -6,8 +6,8 @@ function CreateCanvas(
     screenHeight,
     canvasWidth,
     canvasHeight) {
-    rootDiv.innerHTML =
-        `<canvas id="${canvasDivId}" style="width: ${screenWidth}px;height: ${screenHeight}px;" oncontextmenu="return false"></canvas>`;
+    //rootDiv.innerHTML = `<canvas id="${canvasDivId}" style="width: ${screenWidth}px;height: ${screenHeight}px;" oncontextmenu="return false"></canvas>`;
+    rootDiv.innerHTML = `<canvas id="${canvasDivId}" style="width: ${screenWidth}px;height: ${screenHeight}px;image-rendering: pixelated" oncontextmenu="return false"></canvas>`;
     let canvas = document.getElementById(canvasDivId);
     canvas.setAttribute("width", `${canvasWidth}`);
     canvas.setAttribute("height", `${canvasHeight}`);

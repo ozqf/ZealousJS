@@ -45,6 +45,7 @@
             <div class="centered">Sketches</div>
             <div class="row centered">
                 <button title="Landing screen" onclick="ChangeDemo('Fire')">Fire</button>
+                <button title="Dodge Ball" onclick="ChangeDemo('Dodge')">Dodgeball</button>
                 <button title="Bounding Volume Hierarchy" onclick="ChangeDemo('BVH Demo')">BVH</button>
             </div>
             <div id="demoContainer" class="centered">
@@ -90,13 +91,14 @@ function ChangeDemo(name) {
         <script src="./src/common/zealous.js"></script>
         <script src="./src/common/HeapBVH.js"></script>
         <script src="./src/demos/fire_demo.js"></script>
+        <script src="./src/demos/dodge_demo.js"></script>
         <script src="./src/demos/bvh_demo.js"></script>
         <script>
 ///////////////////////////////////////////////////////////////////
 
 // init first demo
 //ChangeDemo("BVH Demo");
-ChangeDemo("Fire");
+ChangeDemo("Dodge");
 
 ///////////////////////////////////////////////////////////////////
         </script>

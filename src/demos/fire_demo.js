@@ -1,3 +1,5 @@
+// Javascript implementation of PS1 Doom fire effect
+// as described here: http://fabiensanglard.net/doom_fire_psx/index.html
 
 RegisterDemo("Fire", FireDemo);
 
@@ -7,7 +9,7 @@ function FireDemo(rootDiv) {
     console.log("Start Title");
     let w = 160;
     let h = 120;
-   let canvas = CreateCanvas(rootDiv, "fireCanvas", 640, 480, w, h);
+    let canvas = CreateCanvas(rootDiv, "fireCanvas", 640, 480, w, h);
     // Toggle fullscreen
     canvas.addEventListener("click", (ev) => {
         if (!document.fullscreenElement) {
@@ -113,5 +115,6 @@ function FireDemo(rootDiv) {
 
     this.Destroy = () => {
         clearInterval(intervalHandle);
+        rootDiv.innerHTML = "";
     };
 }

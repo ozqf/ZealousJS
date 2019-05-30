@@ -16,11 +16,6 @@ function DodgeDemo(rootDiv) {
     let world;
 	
     // Functions
-    let TickObstacle = (gs, ent, deltaTime) => {
-        Ent_SimpleMove(gs, ent, deltaTime);
-        Ent_BoundaryBounce(gs.boundary, ent);
-    };
-
 	let SpawnObstacle = (gs) => {
 		let pad = 8;
 		let x = RandomRange(gs.boundary.minX + pad, gs.boundary.maxX);
@@ -62,14 +57,15 @@ function DodgeDemo(rootDiv) {
         Ent_SimpleMove(gs, ent, deltaTime);
         BoundsCheckPlayer(gs, plyr);
     };
-	
+    
+    let TickObstacle = (gs, ent, deltaTime) => {
+        Ent_SimpleMove(gs, ent, deltaTime);
+        Ent_BoundaryBounce(gs.boundary, ent);
+    };
+
     let Tick = (gs, input, deltaTime) => {
         gs.dirty = true;
 		TickPlayer(gs, plyr, deltaTime);
-        //Ent_SimplePlayerMove(gs, plyr, input, deltaTime);
-        //Ent_BoundaryBounce(gs, plyr);
-        //Ent_BoundaryWrap(gs, plyr);
-        //BoundsCheckPlayer(gs, plyr);
         let ents = gs.GetEntities();
         for (let i = ents.length - 1; i >= 0; --i) {
             let ent = ents[i];

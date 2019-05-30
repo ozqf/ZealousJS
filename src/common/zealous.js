@@ -19,14 +19,6 @@ function Ent_SimpleMove(gs, ent, deltaTime) {
 	ent.pos.y += (ent.vel.y * gs.pix2metre) * deltaTime;
 }
 
-function Ent_SimplePlayerMove(gs, ent, input, deltaTime) {
-	if (ent === null) { return; }
-	if (input.left) { ent.pos.x -= (ent.speed * gs.pix2metre) * deltaTime; }
-	if (input.right) { ent.pos.x += (ent.speed * gs.pix2metre) * deltaTime; }
-	if (input.up) { ent.pos.y -= (ent.speed * gs.pix2metre) * deltaTime; }
-	if (input.down) { ent.pos.y += (ent.speed * gs.pix2metre) * deltaTime; }
-}
-
 function Ent_BoundaryBounce(boundary, ent) {
 	let vel = ent.vel;
 	if (ent.pos.x > boundary.maxX)
@@ -89,6 +81,7 @@ function GenericCtor(
 		maxX: this.pos.x,
 		maxY: this.pos.y
 	};
+	this.colour = newColour;
 	this.Draw = function(ctx, camera) { };
 	this.ToAABB = function() {
 		return aabb;

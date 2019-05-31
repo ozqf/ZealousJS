@@ -14,14 +14,6 @@
         display: flex;
         justify-content: center;
     }
-    .world-canvas {
-        width: 550px;
-        height: 450px;
-        min-width: 550px;
-        min-height: 450px;
-        max-width: 550px;
-        max-height: 450px;
-    }
     body {
         background-color: #222222;
         color: limegreen;
@@ -46,6 +38,7 @@
             <div class="row centered">
                 <button title="Landing screen" onclick="ChangeDemo('Fire')">Fire</button>
                 <button title="Dodge Ball" onclick="ChangeDemo('Dodge')">Dodgeball</button>
+				<button title="Super Box Crate" onclick="ChangeDemo('SuperBoxCrate')">Super Box Crate</button>
                 <button title="Bounding Volume Hierarchy" onclick="ChangeDemo('BVH Demo')">BVH</button>
             </div>
             <div id="demoContainer" class="centered">
@@ -77,7 +70,9 @@ function ChangeDemo(name) {
         return;
     }
     if (page.currentDemo !== null) {
-        page.currentDemo.Destroy();
+		if (page.currentDemo.Destroy !== undefined) {
+			page.currentDemo.Destroy();
+		}
         page.currentDemo = null;
     }
     page.currentDemo = new demo.ctor(page.demoDiv);
@@ -87,9 +82,14 @@ function ChangeDemo(name) {
 ///////////////////////////////////////////////////////////////////        
         </script>
         <!-- #Include -->
+		<!-- TODO: Concat js files -->
+		
+		<!-- lib -->
         <script src="./src/common/dom.js"></script>
         <script src="./src/common/zealous.js"></script>
         <script src="./src/common/HeapBVH.js"></script>
+		
+		<!-- demos -->
         <script src="./src/demos/fire_demo.js"></script>
         <script src="./src/demos/dodge_demo.js"></script>
         <script src="./src/demos/bvh_demo.js"></script>
@@ -97,8 +97,7 @@ function ChangeDemo(name) {
 ///////////////////////////////////////////////////////////////////
 
 // init first demo
-//ChangeDemo("BVH Demo");
-ChangeDemo("Dodge");
+ChangeDemo(page.demos[0].name);
 
 ///////////////////////////////////////////////////////////////////
         </script>

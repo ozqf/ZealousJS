@@ -254,7 +254,12 @@ function CanvasScene(canvas, PreTickCallback) {
 		maxY: canvas.height
 	};
 	
+	////////////////////////////////////////////////////////////
+	// Get services
+	////////////////////////////////////////////////////////////
+	
 	this.GetInput = () => { return input; };
+	this.GetCamera = () => { return camera; };
 
 	////////////////////////////////////////////////////////////
 	// Entity Creation
@@ -359,7 +364,8 @@ function CanvasScene(canvas, PreTickCallback) {
 	
     this.Draw = function() {
 		//ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = "#222222";
+		//ctx.fillStyle = "#222222";
+		ctx.fillStyle = "#000000";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		camera.halfWidth = canvas.width * 0.5;
 		camera.halfHeight = canvas.height * 0.5;
@@ -472,7 +478,7 @@ function CanvasScene(canvas, PreTickCallback) {
 
 	this.HandleMouseClick = (ev) => {
 		input.mouseOneClick = true;
-		console.log(`Mouse click`);
+		//console.log(`Mouse click`);
 		this.dirty = true;
 		return false;
 	};

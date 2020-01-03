@@ -6,7 +6,7 @@ RegisterDemo("Fire", FireDemo);
 function FireDemo(rootDiv) {
     
     // Init stuff
-    console.log("Start Title");
+    console.log("Start Fire");
     let w = 160;
     let h = 120;
     let canvas = CreateCanvas(rootDiv, "fireCanvas", 640, 480, w, h);

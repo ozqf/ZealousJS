@@ -41,6 +41,7 @@
                 <!-- <button title="Dodge Ball" onclick="ChangeDemo('Dodge')">Dodgeball</button> -->
 				<!-- <button title="Super Box Crate" onclick="ChangeDemo('SuperBoxCrate')">Super Box Crate</button> -->
                 <button title="Bounding Volume Hierarchy" onclick="ChangeDemo('BVH Demo')">BVH</button>
+                <button title="Editor" onclick="ChangeDemo('Editor')">Editor</button>
             </div>
             <div id="demoContainer" class="centered">
 
@@ -96,11 +97,13 @@ function ChangeDemo(name) {
         <script src="./src/demos/dodge_demo.js"></script>
         <script src="./src/demos/super_box_crate_demo.js"></script>
         <script src="./src/demos/bvh_demo.js"></script>
+        <script src="./src/demos/editor.js"></script>
         <script>
 ///////////////////////////////////////////////////////////////////
 
 // init first demo
-ChangeDemo(page.demos[0].name);
+//ChangeDemo(page.demos[0].name);
+ChangeDemo(page.demos[page.demos.length - 1].name);
 
 ///////////////////////////////////////////////////////////////////
         </script>

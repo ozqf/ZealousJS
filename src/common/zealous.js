@@ -70,6 +70,7 @@ function ZqfInitShapeBase(obj, id, tag, depth, x, y) {
 	obj.pos = new V2(x, y);
 	obj.vel = new V2(0, 0);
 	obj.speed = 0;
+	obj.hidden = false;
 }
 
 function GenericCtor(
@@ -97,7 +98,6 @@ function BoxCtor(
 	this.halfHeight = newHalfHeight;
 	this.colour = newColour;
 	this.Draw = function(ctx, camera) {
-		
 		ctx.fillStyle = this.colour;
 		let minX = (this.pos.x - this.halfWidth) - camera.minX;
 		let minY = (this.pos.y - this.halfHeight) - camera.minY;
@@ -179,6 +179,41 @@ function LineCtor(id, startX, startY, endX, endY, colour) {
 			minY: Math.min(this.a.y, this.b.y),
 			maxX: Math.max(this.a.x, this.b.x),
 			maxY: Math.max(this.a.y, this.b.y)
+		};
+	};
+}
+
+function TextCtor(id, newX, newY, bgWidth, bgHeight, textStr, colour) {
+	ZqfInitShapeBase(this, id, 0, 0, 0, 0);
+	this.pos = new V2(newX, newY);
+	this.colour = colour;
+	this.text = textStr;
+	this.halfWidth = bgWidth / 2;
+	this.halfHeight = bgHeight / 2;
+	this.Draw = function(ctx, camera) {
+		console.log(`Draw text str "${this.text}"`);
+		let txtSize = ctx.measureText(this.text);
+		// Draw BG
+		ctx.fillStyle = "#333333";
+		let minX = (this.pos.x - this.halfWidth) - camera.minX;
+		let minY = (this.pos.y - this.halfHeight) - camera.minY;
+		ctx.fillRect(minX, minY,
+			(this.halfWidth * 2), (this.halfHeight * 2));
+		// Draw text
+		ctx.font = "16px Arial";
+		ctx.fillStyle = this.colour;
+		ctx.fillText(
+			this.text,
+			this.pos.x - (txtSize.width / 2),
+			this.pos.y + 6
+		);
+	};
+	this.ToAABB = function() {
+		return {
+			minX: this.pos.x - this.halfWidth,
+			minY: this.pos.y - this.halfHeight,
+			maxX: this.pos.x + this.halfWidth,
+			maxY: this.pos.y + this.halfHeight
 		};
 	};
 }
@@ -305,6 +340,14 @@ function CanvasScene(canvas, PreTickCallback) {
 		shapes.push(line);
 		return line;
 	};
+
+	this.AddText = function(x, y, bgWidth, bgHeight, textStr, colour) {
+		let txt = new TextCtor(
+			nextEntityId++, x, y, bgWidth, bgHeight, textStr, colour
+		);
+		shapes.push(txt);
+		return txt;
+	}
 	
 	////////////////////////////////////////////////////////////
 	// Entity removal
@@ -390,6 +433,7 @@ function CanvasScene(canvas, PreTickCallback) {
 		});
 		for (let i = 0; i < shapes.length; ++i) {
 			let obj = shapes[i];
+			if (obj.hidden) { continue; }
 			if (obj.Draw !== null) {
 				obj.Draw(ctx, camera);
 			}

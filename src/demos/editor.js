@@ -31,6 +31,7 @@ function GridEditor(rootDiv) {
 
     let pix2Metre = 16;
     let halfPix2Metre = pix2Metre / 2;
+    let world;
 
     console.log(`Start Editor`);
     let w = 800;//640;
@@ -87,6 +88,7 @@ function GridEditor(rootDiv) {
         }
         if (gs.GetActionToggledOff("1")) {
             console.log(`Bar`);
+            //console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight));
         }
 
         if (input.mouseOneClick) {
@@ -99,8 +101,6 @@ function GridEditor(rootDiv) {
                 if (ent.cell.type == 1) { newType = 0; }
                 SetCellType(ent, newType);
             }
-            
-            //console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight));
         }
     }
     
@@ -137,6 +137,11 @@ function GridEditor(rootDiv) {
 
     cursor = world.AddOutline(0, 0, 8, 8, '#00ffff');
     cursorId = cursor.id;
+
+    let menu1 = world.AddText(48, 16, 96, 32, "Editor", "#ff0000");
+    let menu2 = world.AddText(48, 48, 96, 32, "1", "#ff0000");
+    menu2.hidden = true;
+    let menu3 = world.AddText(48, 80, 96, 32, "2", "#ff0000");
     
     this.Destroy = () => {
         rootDiv.innerHTML = "";

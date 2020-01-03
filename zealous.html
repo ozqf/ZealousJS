@@ -37,8 +37,9 @@
             <div class="centered">Sketches</div>
             <div class="row centered">
                 <button title="Landing screen" onclick="ChangeDemo('Fire')">Fire</button>
-                <button title="Dodge Ball" onclick="ChangeDemo('Dodge')">Dodgeball</button>
-				<button title="Super Box Crate" onclick="ChangeDemo('SuperBoxCrate')">Super Box Crate</button>
+                <!-- <button title="Collision Tests" onclick="ChangeDemo('Collision')">Collision Detection</button> -->
+                <!-- <button title="Dodge Ball" onclick="ChangeDemo('Dodge')">Dodgeball</button> -->
+				<!-- <button title="Super Box Crate" onclick="ChangeDemo('SuperBoxCrate')">Super Box Crate</button> -->
                 <button title="Bounding Volume Hierarchy" onclick="ChangeDemo('BVH Demo')">BVH</button>
             </div>
             <div id="demoContainer" class="centered">
@@ -91,7 +92,9 @@ function ChangeDemo(name) {
 		
 		<!-- demos -->
         <script src="./src/demos/fire_demo.js"></script>
+        <script src="./src/demos/collision_demo.js"></script>
         <script src="./src/demos/dodge_demo.js"></script>
+        <script src="./src/demos/super_box_crate_demo.js"></script>
         <script src="./src/demos/bvh_demo.js"></script>
         <script>
 ///////////////////////////////////////////////////////////////////

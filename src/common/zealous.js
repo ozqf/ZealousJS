@@ -218,6 +218,10 @@ function CanvasScene(canvas, PreTickCallback) {
 	
 	ctx.fillStyle = "#000000ff	";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	let inputActions = new InputActions();
+	this.GetActions = () => { return inputActions; }
+	let keyEvents = [];
 	
 	let shapes = [];
 	let input = {
@@ -259,6 +263,8 @@ function CanvasScene(canvas, PreTickCallback) {
 	////////////////////////////////////////////////////////////
 	
 	this.GetInput = () => { return input; };
+	this.GetActionValue = (name) => { return inputActions.GetActionValue(name); }
+	this.GetActionToggledOff = (name) => { return inputActions.GetActionToggleOff(name, tick); }
 	this.GetCamera = () => { return camera; };
 
 	////////////////////////////////////////////////////////////
@@ -351,6 +357,14 @@ function CanvasScene(canvas, PreTickCallback) {
     this.Tick = (deltaTime) => {
 		if (!this.dirty) { return; }
 		this.dirty = false;
+
+		console.log(`Process key events`);
+		for (let i = keyEvents.length - 1; i >= 0; --i) {
+			let ev = keyEvents[i];
+			inputActions.ReadKey(ev.keyCode, ev.value, tick);
+		}
+		keyEvents = [];
+
 		if (PreTickCallback) {
 			PreTickCallback(this, input, deltaTime);
 		}
@@ -434,13 +448,20 @@ function CanvasScene(canvas, PreTickCallback) {
 	///////////////////////////////////////////////////////////////////
 	// Event handlers
 	///////////////////////////////////////////////////////////////////
+
+	let bufferKeyEvent = (keyCode, value) => {
+		keyEvents.push({ keyCode: keyCode, value: value });
+		this.dirty = true;
+	}
+
 	this.HandleKeyDown = function(ev) {
 		let k = ev.keyCode;
 		if (k === keys.left) { input.left = true; return; }
 		if (k === keys.right) { input.right = true; return; }
 		if (k === keys.up) { input.up = true; return; }
 		if (k === keys.down) { input.down = true; return; }
-		else { console.log(`Unused keyCode ${ev.keyCode} Down`); }
+		//else { console.log(`Unused keyCode ${ev.keyCode} Down`); }
+		bufferKeyEvent(k, 1);
 	};
 	
 	this.HandleKeyUp = function(ev) {
@@ -449,7 +470,8 @@ function CanvasScene(canvas, PreTickCallback) {
 		if (k === keys.right) { input.right = false; return; }
 		if (k === keys.up) { input.up = false; return; }
 		if (k === keys.down) { input.down = false; return; }
-		else { console.log(`Unused keyCode ${ev.keyCode} Up`); }
+		//else { console.log(`Unused keyCode ${ev.keyCode} Up`); }
+		bufferKeyEvent(k, 0);
 	};
 	
 	this.HandleMouseMove = (ev) => {
@@ -461,19 +483,21 @@ function CanvasScene(canvas, PreTickCallback) {
 	};
 
 	this.HandleGetFocus = function() {
-		console.log(`Get focus`);
+		//console.log(`Get focus`);
+		this.dirty = true;
 	};
 
 	this.HandleLoseFocus = function() {
-		console.log(`Lose focus`);
+		//console.log(`Lose focus`);
+		this.dirty = true;
 	};
 
 	this.HandleMouseDown = (ev) => {
-
+		this.dirty = true;
 	};
 	
 	this.HandleMouseUp = (ev) => {
-		
+		this.dirty = true;
 	};
 
 	this.HandleMouseClick = (ev) => {

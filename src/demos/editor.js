@@ -65,31 +65,42 @@ function GridEditor(rootDiv) {
         }
     }
 
+    let IsGridPositionSafe = (x, y) => {
+        if (x < 0 || x >= gridWidth) { return false; }
+        if (y < 0 || y >= gridHeight) { return false; }
+        return true;
+    }
+
     /////////////////////////////////////////////////////
     // Tick
     /////////////////////////////////////////////////////
     let WorldTickCallback = (gs, input, deltaTime) => {
-        let cursorEnt = gs.FindEntById(cursorId);
+        //gs.dirty = true;
+        let cursorEnt = gs.FindEntById(cursorId); 
 	    if (cursorEnt) {
 	    	cursorEnt.pos.x = gs.cursorPos.x;
 	    	cursorEnt.pos.y = gs.cursorPos.y;
         }
 
+        if (gs.GetActions().GetActionValue("1") === 1) {
+            //console.log(`Foo`);
+        }
+        if (gs.GetActionToggledOff("1")) {
+            console.log(`Bar`);
+        }
+
         if (input.mouseOneClick) {
             let gridX = Math.floor(gs.cursorPos.x / pix2Metre);
             let gridY = Math.floor(gs.cursorPos.y / pix2Metre);
-            //console.log(`Clicked cell ${gridX}/${gridY}`);
-
-            let index = gridX + (gridY * gridWidth);
-            let ent = gridEntities[index];
-            let newType = 1;
-            if (ent.cell.type == 1) { newType = 0; }
-            SetCellType(ent, newType);
-            /*for (let i = 0; i < gridEntities.length; ++i) {
-                gridEntities[i].colour = '#111111';
+            if (IsGridPositionSafe(gridX, gridY)) {
+                let index = gridX + (gridY * gridWidth);
+                let ent = gridEntities[index];
+                let newType = 1;
+                if (ent.cell.type == 1) { newType = 0; }
+                SetCellType(ent, newType);
             }
-            gridEntities[index].colour = '#00ff00';*/
-            console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight));
+            
+            //console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight));
         }
     }
     
@@ -99,6 +110,8 @@ function GridEditor(rootDiv) {
     /////////////////////////////////////////////////////
     world = new CanvasScene(canvas, WorldTickCallback);
     world.Start(20);
+
+    world.GetActions().AddAction("1", KEY_CODES.space);
 
     for (let y = 0; y < gridHeight; ++y) {
         for (let x = 0; x < gridWidth; ++x) {

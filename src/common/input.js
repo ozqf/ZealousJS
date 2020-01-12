@@ -1,7 +1,28 @@
 
 
 let KEY_CODES = {
-    space: 32
+    space: 32,
+	leftShift: 16,
+	leftControl: 17,
+	enter: 13,
+	backspace: 8,
+	up: 38,
+	down: 83,
+	left: 65,
+	right: 68,
+	
+	q: 81,
+	e: 69,
+	r: 82,
+	f: 70,
+	w: 87,
+	a: 65,
+	s: 83,
+	d: 68,
+	z: 90,
+	x: 88,
+	c: 67,
+	v: 86
 };
 
 function InputActions() {
@@ -51,7 +72,7 @@ function InputActions() {
         if (frame === undefined) { console.log(`Frame undefined`); return false; }
         let action = actions[name];
         if (action === undefined) { return false; }
-        console.log(`Check toggled frame ${frame} vs ${action.lastChangeFrame} and value ${action.value}`);
+        //console.log(`Check toggled frame ${frame} vs ${action.lastChangeFrame} and value ${action.value}`);
         if (action.lastChangeFrame === frame && action.value === 0)
         { return true; }
         return false;

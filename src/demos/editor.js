@@ -18,6 +18,50 @@ function WriteGridToStr(gridEnts, w, h)
     return str;
 }
 
+let editor_level_1_asci = 
+`################################################################################################
+##########################   ###    ############################################################
+########################## #        ############################################################
+##########################         #############################################################
+##############################   # ######## ####################################################
+##############################  ##  #######  ###################################################
+###            ##############  #### ########     ######### #####################################
+##     ####     ############   #### ############  ######## #####################################
+#                ########    # #### ############  ########   ###################################
+#                   #####    # ####  ########### #########    ##################################
+#                ##  ###     # ##### ########### #####  ####       #############################
+##     ####     ####  #  ###   ##### ########### ####   ####            ########################
+###            ######   #### ####### ########### ###  #  #    #### #### ########################
+##################     ##### #####    #######    ### ##  # #  ###  ##############            ###
+##############      ######## # ### #   ###     ####  ##    #####    ############     ####     ##
+##############      ########       ##  #   ##  ###  ###   #####  ## ###########                #
+################  # ########      ###    ##     #  #####  ####  ###  ######                    #
+################### ###########   #### ####       #         #  ##### #        #                #
+############################################## #  #  ### #    ######   #   ## ##     ####     ##
+############################################   ######### #   ########    #### ###            ###
+############################################  ########## ## #########   ##### ##################
+############################################# ##########  ############ ######   ################
+#############################################    #######  ################      ################
+################################################################################################`;
+
+function LoadGridFromText(gridEnts, w, h, str) {
+	
+}
+
+function Editor_CreateGrid(game, newWidth, newHeight) {
+	let grid = {
+		width: newWidth,
+		height: newHeight,
+		ents: [],
+		displayEnts: []
+	};
+	let totalCells = newWidth * newHeight;
+	for(let i = 0; i < totalCells; ++i) {
+		
+	}
+	return grid;
+}
+
 function GridEditor(rootDiv) {
     const TAG_NONE = 0;
     const TAG_CELL = 1;
@@ -32,11 +76,20 @@ function GridEditor(rootDiv) {
     let pix2Metre = 16;
     let halfPix2Metre = pix2Metre / 2;
     let world;
+	
+	let painter = {
+		currentTypeIndex: 1,
+		paintTypes: [ 0, 1]
+	};
 
     console.log(`Start Editor`);
     let w = 800;//640;
     let h = 600;//480;
     let canvas = CreateCanvas(rootDiv, "fireCanvas", w, h, w, h);
+	
+	let showMenu = true;
+	
+	let mainMenu = {};
 
     let ctx = canvas.getContext("2d");
     ctx.fillStyle = '#000000';
@@ -71,6 +124,17 @@ function GridEditor(rootDiv) {
         if (y < 0 || y >= gridHeight) { return false; }
         return true;
     }
+	
+	let ToggleShowMenu = () => {
+		showMenu = !showMenu;
+		mainMenu.menu1.hidden = !showMenu;
+		mainMenu.menu2.hidden = !showMenu;
+		mainMenu.menu3.hidden = !showMenu;
+	}
+	
+	let GetPaintType = () => {
+		return painter.paintTypes[painter.currentTypeIndex];
+	}
 
     /////////////////////////////////////////////////////
     // Tick
@@ -86,9 +150,27 @@ function GridEditor(rootDiv) {
         if (gs.GetActions().GetActionValue("1") === 1) {
             //console.log(`Foo`);
         }
-        if (gs.GetActionToggledOff("1")) {
-            console.log(`Bar`);
-            //console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight));
+        if (gs.GetActionToggledOff("save")) {
+            console.log(`Print Level`);
+            console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight));
+        }
+		if (gs.GetActionToggledOff("toggle_menu")) {
+            //console.log(`Toggle show menu`);
+            ToggleShowMenu();
+        }
+		if (gs.GetActionToggledOff("next_paint")) {
+            //console.log(`Toggle show menu`);
+            ToggleShowMenu();
+        }
+		if (gs.GetActionToggledOff("previous_paint")) {
+            //console.log(`Toggle show menu`);
+			
+            painter.currentTypeIndex -= 1;
+			if (painter.currentTypeIndex < 0) {
+				painter.currentTypeIndex = painter.paintTypes.length - 1;
+			}
+			let paintValue = painter.paintTypes[painter.currentTypeIndex];
+			console.log(`Painting type ${paintValue}`);
         }
 
         if (input.mouseOneClick) {
@@ -97,9 +179,7 @@ function GridEditor(rootDiv) {
             if (IsGridPositionSafe(gridX, gridY)) {
                 let index = gridX + (gridY * gridWidth);
                 let ent = gridEntities[index];
-                let newType = 1;
-                if (ent.cell.type == 1) { newType = 0; }
-                SetCellType(ent, newType);
+                SetCellType(ent, GetPaintType());
             }
         }
     }
@@ -111,7 +191,10 @@ function GridEditor(rootDiv) {
     world = new CanvasScene(canvas, WorldTickCallback);
     world.Start(20);
 
-    world.GetActions().AddAction("1", KEY_CODES.space);
+    world.GetActions().AddAction("save", KEY_CODES.space);
+	world.GetActions().AddAction("previous_paint", KEY_CODES.q);
+	world.GetActions().AddAction("next_paint", KEY_CODES.e);
+	world.GetActions().AddAction("toggle_menu", KEY_CODES.r);
 
     for (let y = 0; y < gridHeight; ++y) {
         for (let x = 0; x < gridWidth; ++x) {
@@ -138,10 +221,10 @@ function GridEditor(rootDiv) {
     cursor = world.AddOutline(0, 0, 8, 8, '#00ffff');
     cursorId = cursor.id;
 
-    let menu1 = world.AddText(48, 16, 96, 32, "Editor", "#ff0000");
-    let menu2 = world.AddText(48, 48, 96, 32, "1", "#ff0000");
-    menu2.hidden = true;
-    let menu3 = world.AddText(48, 80, 96, 32, "2", "#ff0000");
+    mainMenu.menu1 = world.AddText(48, 16, 96, 32, "Editor", "#ff0000");
+    mainMenu.menu2 = world.AddText(48, 48, 96, 32, "1", "#ff0000");
+    //menu2.hidden = true;
+    mainMenu.menu3 = world.AddText(48, 80, 96, 32, "2", "#ff0000");
     
     this.Destroy = () => {
         rootDiv.innerHTML = "";

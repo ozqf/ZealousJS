@@ -191,7 +191,7 @@ function TextCtor(id, newX, newY, bgWidth, bgHeight, textStr, colour) {
 	this.halfWidth = bgWidth / 2;
 	this.halfHeight = bgHeight / 2;
 	this.Draw = function(ctx, camera) {
-		console.log(`Draw text str "${this.text}"`);
+		//console.log(`Draw text str "${this.text}"`);
 		let txtSize = ctx.measureText(this.text);
 		// Draw BG
 		ctx.fillStyle = "#333333";
@@ -401,7 +401,7 @@ function CanvasScene(canvas, PreTickCallback) {
 		if (!this.dirty) { return; }
 		this.dirty = false;
 
-		console.log(`Process key events`);
+		//console.log(`Process key events`);
 		for (let i = keyEvents.length - 1; i >= 0; --i) {
 			let ev = keyEvents[i];
 			inputActions.ReadKey(ev.keyCode, ev.value, tick);

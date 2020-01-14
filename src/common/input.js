@@ -1,6 +1,11 @@
 
 
 let KEY_CODES = {
+    mouseX: -1,
+    mouseY: -2,
+    mouse1: -3,
+    mouse2: -4,
+
     space: 32,
 	leftShift: 16,
 	leftControl: 17,
@@ -22,7 +27,18 @@ let KEY_CODES = {
 	z: 90,
 	x: 88,
 	c: 67,
-	v: 86
+    v: 86,
+    
+    num0: 48,
+    num1: 49,
+    num2: 50,
+    num3: 51,
+    num4: 52,
+    num5: 53,
+    num6: 54,
+    num7: 55,
+    num8: 56,
+    num9: 57
 };
 
 function InputActions() {
@@ -49,7 +65,7 @@ function InputActions() {
             let action = actions[actionKeys[i]];
             if (action.keyCode === keyCode) {
                 if (action.value !== value) {
-                    console.log(`Action ${action.name} changed to ${value}`);
+                    //console.log(`Action ${action.name} changed to ${value}`);
                     action.value = value;
                     action.lastChangeFrame = frameNumber;
                 }

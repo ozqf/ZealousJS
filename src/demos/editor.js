@@ -80,7 +80,10 @@ function GridEditor(rootDiv) {
 	let painter = {
 		currentTypeIndex: 1,
 		paintTypes: [ 0, 1]
-	};
+    };
+    
+    // 9 cursors to surround central mouse -> grid overlap
+    let cursors = [];
 
     console.log(`Start Editor`);
     let w = 800;//640;
@@ -107,6 +110,7 @@ function GridEditor(rootDiv) {
     }
 
     let SetCellType = (box, type) => {
+        if (box.cell.type === type) { return; }
         switch (type) {
             case 1:
                 box.cell.type = type;
@@ -134,19 +138,27 @@ function GridEditor(rootDiv) {
 	
 	let GetPaintType = () => {
 		return painter.paintTypes[painter.currentTypeIndex];
-	}
+    }
+    
+    let SetCursorPos = (ent, gridX, gridY) => {
+        let x = (gridX * pix2Metre) + halfPix2Metre;
+        let y = (gridY * pix2Metre) + halfPix2Metre;
+        ent.pos.x = x;
+	    ent.pos.y = y;
+    }
 
     /////////////////////////////////////////////////////
     // Tick
     /////////////////////////////////////////////////////
     let WorldTickCallback = (gs, input, deltaTime) => {
         //gs.dirty = true;
-        let cursorEnt = gs.FindEntById(cursorId); 
-	    if (cursorEnt) {
-	    	cursorEnt.pos.x = gs.cursorPos.x;
-	    	cursorEnt.pos.y = gs.cursorPos.y;
+        let gridX = Math.floor(gs.cursorPos.x / pix2Metre);
+        let gridY = Math.floor(gs.cursorPos.y / pix2Metre);
+        for (let i = 0; i < cursors.length; ++i) {
+            let cursor = cursors[i];
+            SetCursorPos(cursor, gridX + cursor.gridOffsetX, gridY + cursor.gridOffsetY);
         }
-
+        
         if (gs.GetActions().GetActionValue("1") === 1) {
             //console.log(`Foo`);
         }
@@ -160,7 +172,12 @@ function GridEditor(rootDiv) {
         }
 		if (gs.GetActionToggledOff("next_paint")) {
             //console.log(`Toggle show menu`);
-            ToggleShowMenu();
+            painter.currentTypeIndex += 1;
+			if (painter.currentTypeIndex >= painter.paintTypes.length) {
+				painter.currentTypeIndex = 0;
+            }
+            let paintValue = painter.paintTypes[painter.currentTypeIndex];  
+            console.log(`Painting type ${paintValue}`);
         }
 		if (gs.GetActionToggledOff("previous_paint")) {
             //console.log(`Toggle show menu`);
@@ -172,18 +189,22 @@ function GridEditor(rootDiv) {
 			let paintValue = painter.paintTypes[painter.currentTypeIndex];
 			console.log(`Painting type ${paintValue}`);
         }
-
-        if (input.mouseOneClick) {
-            let gridX = Math.floor(gs.cursorPos.x / pix2Metre);
-            let gridY = Math.floor(gs.cursorPos.y / pix2Metre);
+        if (gs.GetActionValue("paint") == 1) {
+            console.log(`Paint`);
             if (IsGridPositionSafe(gridX, gridY)) {
                 let index = gridX + (gridY * gridWidth);
                 let ent = gridEntities[index];
                 SetCellType(ent, GetPaintType());
             }
         }
+        if (gs.GetActionValue("copy_paint_type") == 1) {
+            if (IsGridPositionSafe(gridX, gridY)) {
+                let index = gridX + (gridY * gridWidth);
+                let ent = gridEntities[index];
+                painter.currentTypeIndex = ent.cell.type;
+            }
+        }
     }
-    
     
     /////////////////////////////////////////////////////
     // Init world
@@ -194,7 +215,11 @@ function GridEditor(rootDiv) {
     world.GetActions().AddAction("save", KEY_CODES.space);
 	world.GetActions().AddAction("previous_paint", KEY_CODES.q);
 	world.GetActions().AddAction("next_paint", KEY_CODES.e);
-	world.GetActions().AddAction("toggle_menu", KEY_CODES.r);
+    world.GetActions().AddAction("toggle_menu", KEY_CODES.r);
+    world.GetActions().AddAction("paint", KEY_CODES.mouse1);
+    world.GetActions().AddAction("copy_paint_type", KEY_CODES.mouse2);
+    
+    world.GetActions().AddAction("1", KEY_CODES.num1);
 
     for (let y = 0; y < gridHeight; ++y) {
         for (let x = 0; x < gridWidth; ++x) {
@@ -218,9 +243,24 @@ function GridEditor(rootDiv) {
     }
     console.log(`Created ${gridEntities.length} grid cells`);
 
-    cursor = world.AddOutline(0, 0, 8, 8, '#00ffff');
-    cursorId = cursor.id;
+    let AddCursor = (gridOffsetX, gridOffsetY) => {
+        let cursor = world.AddOutline(0, 0, 8, 8, '#00ffff');
+        cursor.gridOffsetX = gridOffsetX;
+        cursor.gridOffsetY = gridOffsetY;
+        cursors.push(cursor);
+        console.log(`Creator cursor ${gridOffsetX}/${gridOffsetY}`);
+    }
 
+    // Create cursors
+    //cursor = world.AddOutline(0, 0, 8, 8, '#00ffff');
+    //cursorId = cursor.id;
+    for (let y = -2; y <= 2; ++y) {
+        for (let x = -2; x <= 2; ++x) {
+            AddCursor(x, y);
+        }
+    }
+    
+    // Create UI
     mainMenu.menu1 = world.AddText(48, 16, 96, 32, "Editor", "#ff0000");
     mainMenu.menu2 = world.AddText(48, 48, 96, 32, "1", "#ff0000");
     //menu2.hidden = true;

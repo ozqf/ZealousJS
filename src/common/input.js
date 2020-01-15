@@ -55,8 +55,20 @@ function InputActions() {
             lastChangeFrame: 0
         };
         actions[name] = action;
-        console.log(`Added action ${name} keyCode ${keyCode}`);
+        //console.log(`Added action ${name} keyCode ${keyCode}`);
         actionKeys.push(name);
+    }
+
+    // Only checks keys, not mouse
+    this.IsAnyKeyOn = () => {
+        let len = actionKeys.length;
+        for (let i = 0; i < len; ++i) {
+            let action = actions[actionKeys[i]];
+            if (action.keyCode > 0 && action.value > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     this.ReadKey = (keyCode, value, frameNumber) => {
@@ -92,5 +104,14 @@ function InputActions() {
         if (action.lastChangeFrame === frame && action.value === 0)
         { return true; }
         return false;
+    }
+
+    this.DebugListActions = () => {
+        let len = actionKeys.length;
+        for (let i = 0; i < len; ++i) {
+            let key = actionKeys[i];
+            let action = actions[key];
+            console.log(`Action ${action.name} code ${action.keyCode}`)
+        }
     }
 }

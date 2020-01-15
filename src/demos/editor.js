@@ -85,9 +85,12 @@ function GridEditor(rootDiv) {
     // 9 cursors to surround central mouse -> grid overlap
     let cursors = [];
 
+    let cameraPos = new V2(0, 0);
+    let cameraSpeed = 256;
+
     console.log(`Start Editor`);
     let w = 800;//640;
-    let h = 600;//480;
+    let h = 480;
     let canvas = CreateCanvas(rootDiv, "fireCanvas", w, h, w, h);
 	
 	let showMenu = true;
@@ -141,6 +144,7 @@ function GridEditor(rootDiv) {
     }
     
     let SetCursorPos = (ent, gridX, gridY) => {
+        if (IsGridPositionSafe(gridX, gridY) === false) { return; }
         let x = (gridX * pix2Metre) + halfPix2Metre;
         let y = (gridY * pix2Metre) + halfPix2Metre;
         ent.pos.x = x;
@@ -151,9 +155,14 @@ function GridEditor(rootDiv) {
     // Tick
     /////////////////////////////////////////////////////
     let WorldTickCallback = (gs, input, deltaTime) => {
-        //gs.dirty = true;
-        let gridX = Math.floor(gs.cursorPos.x / pix2Metre);
-        let gridY = Math.floor(gs.cursorPos.y / pix2Metre);
+        // Hack to make repeated keys not jam
+        if (gs.GetActions().IsAnyKeyOn()) {
+            gs.dirty = true;
+        }
+        let cursorWorldX = gs.cursorPos.x + gs.GetCamera().minX;
+        let cursorWorldY = gs.cursorPos.y + gs.GetCamera().minY;
+        let gridX = Math.floor(cursorWorldX / pix2Metre);
+        let gridY = Math.floor(cursorWorldY / pix2Metre);
         for (let i = 0; i < cursors.length; ++i) {
             let cursor = cursors[i];
             SetCursorPos(cursor, gridX + cursor.gridOffsetX, gridY + cursor.gridOffsetY);
@@ -204,6 +213,27 @@ function GridEditor(rootDiv) {
                 painter.currentTypeIndex = ent.cell.type;
             }
         }
+        let cameraDirty = false;
+        if (gs.GetActionValue("camera_left") === 1) {
+            cameraPos.x -= cameraSpeed * deltaTime;
+            cameraDirty = true;
+        }
+        if (gs.GetActionValue("camera_right") === 1) {
+            cameraPos.x += cameraSpeed * deltaTime;
+            cameraDirty = true;
+        }
+        if (gs.GetActionValue("camera_up") === 1) {
+            cameraPos.y -= cameraSpeed * deltaTime;
+            cameraDirty = true;
+        }
+        if (gs.GetActionValue("camera_down") === 1) {
+            cameraPos.y += cameraSpeed * deltaTime;
+            cameraDirty = true;
+        }
+        
+        if (cameraDirty) {
+            gs.SetCameraWorldCentre(cameraPos.x, cameraPos.y);
+        }
     }
     
     /////////////////////////////////////////////////////
@@ -211,16 +241,29 @@ function GridEditor(rootDiv) {
     /////////////////////////////////////////////////////
     world = new CanvasScene(canvas, WorldTickCallback);
     world.Start(20);
+    cameraPos.x = world.GetCamera().x;
+    cameraPos.y = world.GetCamera().y;
 
-    world.GetActions().AddAction("save", KEY_CODES.space);
-	world.GetActions().AddAction("previous_paint", KEY_CODES.q);
-	world.GetActions().AddAction("next_paint", KEY_CODES.e);
-    world.GetActions().AddAction("toggle_menu", KEY_CODES.r);
-    world.GetActions().AddAction("paint", KEY_CODES.mouse1);
-    world.GetActions().AddAction("copy_paint_type", KEY_CODES.mouse2);
+    let actions = world.GetActions();
+    actions.AddAction("save", KEY_CODES.space);
+	actions.AddAction("previous_paint", KEY_CODES.q);
+	actions.AddAction("next_paint", KEY_CODES.e);
+    actions.AddAction("toggle_menu", KEY_CODES.r);
+    actions.AddAction("paint", KEY_CODES.mouse1);
+    actions.AddAction("copy_paint_type", KEY_CODES.mouse2);
+
+    actions.AddAction("camera_up", KEY_CODES.w);
+    actions.AddAction("camera_down", KEY_CODES.s);
+    actions.AddAction("camera_left", KEY_CODES.a);
+    actions.AddAction("camera_right", KEY_CODES.d);
     
-    world.GetActions().AddAction("1", KEY_CODES.num1);
+    actions.AddAction("1", KEY_CODES.num1);
+    actions.DebugListActions();
 
+
+    ///////////////////////////////////////////////////////////////
+    // Build Grid
+    ///////////////////////////////////////////////////////////////
     for (let y = 0; y < gridHeight; ++y) {
         for (let x = 0; x < gridWidth; ++x) {
             // Create display outline for grid cell
@@ -235,7 +278,7 @@ function GridEditor(rootDiv) {
             // Create grid cell itself
             plotX = (x * pix2Metre) + halfPix2Metre;
             plotY = (y * pix2Metre) + halfPix2Metre;
-            let box = world.AddBox(plotX, plotY, halfPix2Metre, halfPix2Metre, '#111111');
+            let box = world.AddBox(plotX, plotY, halfPix2Metre, halfPix2Metre, '#333333');
             box.tag = TAG_CELL;
             box.cell = { x: x, y: y, type: 0 };
             gridEntities.push(box);
@@ -248,7 +291,7 @@ function GridEditor(rootDiv) {
         cursor.gridOffsetX = gridOffsetX;
         cursor.gridOffsetY = gridOffsetY;
         cursors.push(cursor);
-        console.log(`Creator cursor ${gridOffsetX}/${gridOffsetY}`);
+        //console.log(`Creator cursor ${gridOffsetX}/${gridOffsetY}`);
     }
 
     // Create cursors
@@ -261,10 +304,11 @@ function GridEditor(rootDiv) {
     }
     
     // Create UI
-    mainMenu.menu1 = world.AddText(48, 16, 96, 32, "Editor", "#ff0000");
-    mainMenu.menu2 = world.AddText(48, 48, 96, 32, "1", "#ff0000");
+
+    mainMenu.menu1 = world.AddText(w - 48, 16, 96, 32, "Editor", "#ff0000");
+    mainMenu.menu2 = world.AddText(w - 48, 48, 96, 32, "1", "#ff0000");
     //menu2.hidden = true;
-    mainMenu.menu3 = world.AddText(48, 80, 96, 32, "2", "#ff0000");
+    mainMenu.menu3 = world.AddText(w - 48, 80, 96, 32, "2", "#ff0000");
     
     this.Destroy = () => {
         rootDiv.innerHTML = "";

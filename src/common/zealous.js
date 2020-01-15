@@ -301,6 +301,13 @@ function CanvasScene(canvas, PreTickCallback) {
 	this.GetActionValue = (name) => { return inputActions.GetActionValue(name); }
 	this.GetActionToggledOff = (name) => { return inputActions.GetActionToggleOff(name, tick); }
 	this.GetCamera = () => { return camera; };
+	this.SetCameraWorldCentre = (x, y) => {
+		console.log(`Set camera centre ${x}/${y}`);
+		camera.x = x;
+		camera.y = y;
+		camera.minX = x - camera.halfWidth;
+		camera.minY = y - camera.halfHeight;
+	}
 
 	////////////////////////////////////////////////////////////
 	// Entity Creation
@@ -505,6 +512,7 @@ function CanvasScene(canvas, PreTickCallback) {
 		if (k === keys.up) { input.up = true; return; }
 		if (k === keys.down) { input.down = true; return; }
 		//else { console.log(`Unused keyCode ${ev.keyCode} Down`); }
+		this.dirty = true;
 		bufferKeyEvent(k, 1);
 	};
 	
@@ -515,6 +523,7 @@ function CanvasScene(canvas, PreTickCallback) {
 		if (k === keys.up) { input.up = false; return; }
 		if (k === keys.down) { input.down = false; return; }
 		//else { console.log(`Unused keyCode ${ev.keyCode} Up`); }
+		this.dirty = true;
 		bufferKeyEvent(k, 0);
 	};
 	
@@ -533,9 +542,11 @@ function CanvasScene(canvas, PreTickCallback) {
 
 	this.HandleLoseFocus = function() {
 		//console.log(`Lose focus`);
+		this.dirty = true;
 	};
 
 	this.HandleMouseDown = (ev) => {
+		this.dirty = true;
 		//console.log(`Mouse down: `, ev.button);
 		switch (ev.button) {
 			case 0:bufferKeyEvent(KEY_CODES.mouse1, 1); break;

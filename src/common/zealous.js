@@ -409,7 +409,8 @@ function CanvasScene(canvas, PreTickCallback) {
 		this.dirty = false;
 
 		//console.log(`Process key events`);
-		for (let i = keyEvents.length - 1; i >= 0; --i) {
+		//for (let i = keyEvents.length - 1; i >= 0; --i) {
+		for (let i = 0; i < keyEvents.length; ++i) {
 			let ev = keyEvents[i];
 			inputActions.ReadKey(ev.keyCode, ev.value, tick);
 		}

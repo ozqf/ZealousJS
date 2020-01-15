@@ -156,9 +156,9 @@ function GridEditor(rootDiv) {
     /////////////////////////////////////////////////////
     let WorldTickCallback = (gs, input, deltaTime) => {
         // Hack to make repeated keys not jam
-        if (gs.GetActions().IsAnyKeyOn()) {
+        //if (gs.GetActions().IsAnyKeyOn()) {
             gs.dirty = true;
-        }
+        //}
         let cursorWorldX = gs.cursorPos.x + gs.GetCamera().minX;
         let cursorWorldY = gs.cursorPos.y + gs.GetCamera().minY;
         let gridX = Math.floor(cursorWorldX / pix2Metre);

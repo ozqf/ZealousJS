@@ -533,12 +533,10 @@ function CanvasScene(canvas, PreTickCallback) {
 
 	this.HandleLoseFocus = function() {
 		//console.log(`Lose focus`);
-		this.dirty = true;
 	};
 
 	this.HandleMouseDown = (ev) => {
-		this.dirty = true;
-		console.log(`Mouse down: `, ev.button);
+		//console.log(`Mouse down: `, ev.button);
 		switch (ev.button) {
 			case 0:bufferKeyEvent(KEY_CODES.mouse1, 1); break;
 			case 2:bufferKeyEvent(KEY_CODES.mouse2, 1); break;

@@ -136,7 +136,7 @@ function GridEditor(rootDiv) {
     const TAG_OUTLINE = 2;
 
     // Grid data/stats
-    let gridDisplayEntities = [];
+    //let gridDisplayEntities = [];
     let gridEntities = [];
     let gridWidth = 32;
     let gridHeight = 32;
@@ -144,6 +144,9 @@ function GridEditor(rootDiv) {
     let pix2Metre = 16;
     let halfPix2Metre = pix2Metre / 2;
     let world;
+    let statusTextEnt;
+
+    let gridDisplayEnt;
 
 	let painter = {
 		currentTypeIndex: 1,
@@ -161,14 +164,14 @@ function GridEditor(rootDiv) {
 	{
 		name: 'solid',
 		index: 1,
-		colour: '#333333',
+		colour: '#222222',
 		geomType: TILE_GEOM_TYPES.SOLID,
 		asciChar: '#'
 	},
 	{
 		name: 'void',
 		index: 2,
-		colour: '#3333ff',
+		colour: '#5555ff',
 		geomType: TILE_GEOM_TYPES.VOID,
 		asciChar: '.'
 	}
@@ -256,8 +259,8 @@ function GridEditor(rootDiv) {
         //if (gs.GetActions().IsAnyKeyOn()) {
             gs.dirty = true;
         //}
-        let cursorWorldX = gs.cursorPos.x + gs.GetCamera().minX;
-        let cursorWorldY = gs.cursorPos.y + gs.GetCamera().minY;
+        let cursorWorldX = Math.floor(gs.cursorPos.x + gs.GetCamera().minX);
+        let cursorWorldY = Math.floor(gs.cursorPos.y + gs.GetCamera().minY);
         let gridX = Math.floor(cursorWorldX / pix2Metre);
         let gridY = Math.floor(cursorWorldY / pix2Metre);
         for (let i = 0; i < cursors.length; ++i) {
@@ -287,7 +290,7 @@ function GridEditor(rootDiv) {
             }
             let paintValue = painter.paintTypes[painter.currentTypeIndex];  
 			let t = tileTypes[painter.currentTypeIndex];
-            console.log(`Painting type ${paintValue} (${t.name})`);
+            statusTextEnt.text = `Painting type ${paintValue} (${t.name})`;
         }
 		if (gs.GetActionToggledOff("previous_paint")) {
             //console.log(`Toggle show menu`);
@@ -298,7 +301,7 @@ function GridEditor(rootDiv) {
 			}
 			let paintValue = painter.paintTypes[painter.currentTypeIndex];
 			let t = tileTypes[painter.currentTypeIndex];
-            console.log(`Painting type ${paintValue} (${t.name})`);
+            statusTextEnt.text = `Painting type ${paintValue} (${t.name})`;
         }
         if (gs.GetActionValue("paint") == 1) {
             if (IsGridPositionSafe(gridX, gridY)) {
@@ -313,7 +316,7 @@ function GridEditor(rootDiv) {
                 let ent = gridEntities[index];
                 painter.currentTypeIndex = ent.cell.type;
                 let t = tileTypes[painter.currentTypeIndex];
-                console.log(`Painting type ${paintValue} (${t.name})`);
+                statusTextEnt.text = `Painting type ${paintValue} (${t.name})`;
             }
         }
         let cameraDirty = false;
@@ -335,6 +338,8 @@ function GridEditor(rootDiv) {
         }
         
         if (cameraDirty) {
+            cameraPos.x = Math.round(cameraPos.x);
+            cameraPos.y = Math.round(cameraPos.y);
             gs.SetCameraWorldCentre(cameraPos.x, cameraPos.y);
         }
     }
@@ -347,11 +352,15 @@ function GridEditor(rootDiv) {
     cameraPos.x = world.GetCamera().x;
     cameraPos.y = world.GetCamera().y;
 
+    gridDisplayEnt = world.AddGrid(w / halfPix2Metre, h / halfPix2Metre);
+    console.log(`Spawned grid ent at ${gridDisplayEnt.pos.x}/${gridDisplayEnt.pos.y}`);
+
     ///////////////////////////////////////////////////////////////
     // Build Grid
     ///////////////////////////////////////////////////////////////
     for (let y = 0; y < gridHeight; ++y) {
         for (let x = 0; x < gridWidth; ++x) {
+            /*
             // Create display outline for grid cell
             let plotX = (x * pix2Metre) + halfPix2Metre;
             let plotY = (y * pix2Metre) + halfPix2Metre;
@@ -360,7 +369,7 @@ function GridEditor(rootDiv) {
             outline.gridX = x;
             outline.gridY = y;
             gridDisplayEntities.push(outline);
-
+            */
             // Create grid cell itself
             plotX = (x * pix2Metre) + halfPix2Metre;
             plotY = (y * pix2Metre) + halfPix2Metre;
@@ -423,6 +432,9 @@ function GridEditor(rootDiv) {
     
     actions.AddAction("1", KEY_CODES.num1);
     actions.DebugListActions();
+
+    // create status text
+    statusTextEnt = world.AddText(256, h - 16, 128, 32, "Foo", "#00ff00");
 
     // load int grid
     let intGrid = LoadGridFromText(editor_level_1_asci, tileTypes);

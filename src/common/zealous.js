@@ -221,8 +221,6 @@ function TextCtor(id, newX, newY, bgWidth, bgHeight, textStr, colour) {
 function GridDrawCtor(id, newX, newY) {
 	ZqfInitShapeBase(this, id, 0, 0, 0, 0);
 	this.pos = new V2(newX, newY);
-	this.colour = colour;
-	this.text = textStr;
 	this.halfWidth = bgWidth / 2;
 	this.halfHeight = bgHeight / 2;
 

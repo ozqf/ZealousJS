@@ -302,7 +302,6 @@ function CanvasScene(canvas, PreTickCallback) {
 	this.GetActionToggledOff = (name) => { return inputActions.GetActionToggleOff(name, tick); }
 	this.GetCamera = () => { return camera; };
 	this.SetCameraWorldCentre = (x, y) => {
-		console.log(`Set camera centre ${x}/${y}`);
 		camera.x = x;
 		camera.y = y;
 		camera.minX = x - camera.halfWidth;

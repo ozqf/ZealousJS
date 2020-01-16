@@ -10,6 +10,7 @@ function WriteGridToStr(gridEnts, w, h)
             let ent = gridEnts[index];
             switch (ent.cell.type) {
                 case 1: str += " "; break;
+                case 2: str += "."; break;
                 default: str += '#'; break;
             }
         }
@@ -79,7 +80,7 @@ function GridEditor(rootDiv) {
 	
 	let painter = {
 		currentTypeIndex: 1,
-		paintTypes: [ 0, 1]
+		paintTypes: [ 0, 1, 2 ]
     };
     
     // 9 cursors to surround central mouse -> grid overlap
@@ -118,6 +119,10 @@ function GridEditor(rootDiv) {
             case 1:
                 box.cell.type = type;
                 box.colour = '#00ff00';
+            break;
+            case 2:
+                box.cell.type = type;
+                box.colour = '#ff0000';
             break;
             default:
             box.cell.type = 0;
@@ -297,8 +302,9 @@ function GridEditor(rootDiv) {
     // Create cursors
     //cursor = world.AddOutline(0, 0, 8, 8, '#00ffff');
     //cursorId = cursor.id;
-    for (let y = -2; y <= 2; ++y) {
-        for (let x = -2; x <= 2; ++x) {
+    let cursorGridSize = 3;
+    for (let y = -cursorGridSize; y <= cursorGridSize; ++y) {
+        for (let x = -cursorGridSize; x <= cursorGridSize; ++x) {
             AddCursor(x, y);
         }
     }

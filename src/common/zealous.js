@@ -218,6 +218,34 @@ function TextCtor(id, newX, newY, bgWidth, bgHeight, textStr, colour) {
 	};
 }
 
+function GridDrawCtor(id, newX, newY) {
+	ZqfInitShapeBase(this, id, 0, 0, 0, 0);
+	this.pos = new V2(newX, newY);
+	this.colour = colour;
+	this.text = textStr;
+	this.halfWidth = bgWidth / 2;
+	this.halfHeight = bgHeight / 2;
+
+	let grid = [];
+	let initialised = false;
+	this.Init = () => {
+
+	};
+
+	this.Draw = function(ctx, camera) {
+		if (!initialised) { return; }
+
+	};
+	this.ToAABB = function() {
+		return {
+			minX: this.pos.x - this.halfWidth,
+			minY: this.pos.y - this.halfHeight,
+			maxX: this.pos.x + this.halfWidth,
+			maxY: this.pos.y + this.halfHeight
+		};
+	};
+}
+
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 // MASTER GAME CONSTRUCTOR
@@ -353,6 +381,14 @@ function CanvasScene(canvas, PreTickCallback) {
 		);
 		shapes.push(txt);
 		return txt;
+	}
+	
+	this.AddGrid = function(x, y) {
+		let grid = new GridDrawCtor(
+			nextEntityId++, x, y
+		);
+		shapes.push(grid);
+		return grid;
 	}
 	
 	////////////////////////////////////////////////////////////

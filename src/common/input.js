@@ -89,7 +89,7 @@ function InputActions() {
     this.GetActionValue = (name) => {
         let action = actions[name];
         if (action === undefined) {
-            console.log(`no action ${name}`);
+            //console.log(`no action ${name}`);
             return 0;
         }
         //console.log(`action ${name} value -- ${action.value}`);

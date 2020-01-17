@@ -195,8 +195,9 @@ function TextCtor(id, newX, newY, bgWidth, bgHeight, textStr, colour) {
 		let txtSize = ctx.measureText(this.text);
 		// Draw BG
 		ctx.fillStyle = "#333333";
-		let minX = (this.pos.x - this.halfWidth) - camera.minX;
-		let minY = (this.pos.y - this.halfHeight) - camera.minY;
+		// TODO: text currently ignores camera! So should its background
+		let minX = (this.pos.x - this.halfWidth);// - camera.minX;
+		let minY = (this.pos.y - this.halfHeight);// - camera.minY;
 		ctx.fillRect(minX, minY,
 			(this.halfWidth * 2), (this.halfHeight * 2));
 		// Draw text
@@ -218,21 +219,30 @@ function TextCtor(id, newX, newY, bgWidth, bgHeight, textStr, colour) {
 	};
 }
 
-function GridDrawCtor(id, newX, newY) {
+function GridDrawCtor(id, newX, newY, pixelsPerMetre) {
 	ZqfInitShapeBase(this, id, 0, 0, 0, 0);
+	let pix2metre = pixelsPerMetre;
 	this.pos = new V2(newX, newY);
-	this.halfWidth = bgWidth / 2;
-	this.halfHeight = bgHeight / 2;
-
 	let grid = [];
 	let initialised = false;
-	this.Init = () => {
-
+	this.halfWidth = 0;
+	this.halfHeight = 0;
+	this.Init = (intGrid) => {
+		console.log(`Grid draw init - size ${intGrid.GetWidth()}/${intGrid.GetHeight()}`);
+		this.halfWidth = (intGrid.GetWidth() * pix2metre);
+		this.halfHeight = (intGrid.GetWidth() * pix2metre);
+		console.log(`  pixel size of grid ${this.halfWidth}/${this.halfHeight}`);
+		initialised = true;
 	};
 
 	this.Draw = function(ctx, camera) {
 		if (!initialised) { return; }
-
+		//console.log(`Draw grid ent`);
+		ctx.fillStyle = "#ff0000";
+		let minX = (this.pos.x - this.halfWidth) - camera.minX;
+		let minY = (this.pos.y - this.halfHeight) - camera.minY;
+		ctx.fillRect(minX, minY,
+			(this.halfWidth * 2), (this.halfHeight * 2));
 	};
 	this.ToAABB = function() {
 		return {
@@ -383,7 +393,7 @@ function CanvasScene(canvas, PreTickCallback) {
 	
 	this.AddGrid = function(x, y) {
 		let grid = new GridDrawCtor(
-			nextEntityId++, x, y
+			nextEntityId++, x, y, this.pix2metre
 		);
 		shapes.push(grid);
 		return grid;
@@ -480,7 +490,7 @@ function CanvasScene(canvas, PreTickCallback) {
 			}
 		}
 	};
-
+	/*
 	this.CreateGrid = (depth) => {
 		let minX = 0;
 		let minY = 0;
@@ -500,7 +510,7 @@ function CanvasScene(canvas, PreTickCallback) {
 			y += this.pix2metre;
 		}
 	};
-	
+	*/
 	///////////////////////////////////////////////////////////////////
 	// Entity Search
 	///////////////////////////////////////////////////////////////////

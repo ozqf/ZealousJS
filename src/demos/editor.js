@@ -128,6 +128,7 @@ function LoadGridFromText(str, tileTypes) {
         grid.SetByIndex(i, val);
     }
     grid.DebugDump(tileTypes);
+    return grid;
 }
 
 function GridEditor(rootDiv) {
@@ -213,7 +214,7 @@ function GridEditor(rootDiv) {
 
     let SetCellType = (box, typeIndex) => {
         if (box.cell.type === typeIndex) {
-            console.log(`Cannot replace type ${box.cell.type} with ${typeIndex}`);
+            //console.log(`Cannot replace type ${box.cell.type} with ${typeIndex}`);
             return;
         }
         let t = tileTypes[typeIndex];
@@ -221,7 +222,7 @@ function GridEditor(rootDiv) {
             console.log(`undefined tile type ${typeIndex}`);
             return;
         }
-		console.log(`Set box to ${t.name} (val ${typeIndex} colour ${t.colour})`);
+		//console.log(`Set box to ${t.name} (val ${typeIndex} colour ${t.colour})`);
         box.cell.type = t.index;
         box.colour = t.colour;
     }
@@ -277,6 +278,7 @@ function GridEditor(rootDiv) {
         if (gs.GetActionToggledOff("save")) {
             console.log(`Print Level`);
             console.log(WriteGridToStr(gridEntities, gridWidth, gridHeight, tileTypes));
+            intGrid.DebugDump(tileTypes);
         }
 		if (gs.GetActionToggledOff("toggle_menu")) {
             //console.log(`Toggle show menu`);
@@ -304,6 +306,8 @@ function GridEditor(rootDiv) {
             statusTextEnt.text = `Painting type ${paintValue} (${t.name})`;
         }
         if (gs.GetActionValue("paint") == 1) {
+            intGrid.SetAt(gridX, gridY, GetPaintType());
+
             if (IsGridPositionSafe(gridX, gridY)) {
                 let index = gridX + (gridY * gridWidth);
                 let ent = gridEntities[index];
@@ -344,14 +348,16 @@ function GridEditor(rootDiv) {
         }
     }
     
+    
     /////////////////////////////////////////////////////
     // Init world
     /////////////////////////////////////////////////////
     world = new CanvasScene(canvas, WorldTickCallback);
     world.Start(20);
+    world.pix2metre = pix2Metre;
     cameraPos.x = world.GetCamera().x;
     cameraPos.y = world.GetCamera().y;
-
+    
     gridDisplayEnt = world.AddGrid(w / halfPix2Metre, h / halfPix2Metre);
     console.log(`Spawned grid ent at ${gridDisplayEnt.pos.x}/${gridDisplayEnt.pos.y}`);
 
@@ -373,7 +379,7 @@ function GridEditor(rootDiv) {
             // Create grid cell itself
             plotX = (x * pix2Metre) + halfPix2Metre;
             plotY = (y * pix2Metre) + halfPix2Metre;
-            let box = world.AddBox(plotX, plotY, halfPix2Metre, halfPix2Metre, '#333333');
+            let box = world.AddBox(plotX, plotY, halfPix2Metre, halfPix2Metre, '#222222');
             box.tag = TAG_CELL;
             box.cell = { x: x, y: y, type: 1 };
             gridEntities.push(box);
@@ -412,8 +418,6 @@ function GridEditor(rootDiv) {
     //menu2.hidden = true;
     mainMenu.menu3 = world.AddText(w - 48, 80, 96, 32, "2", "#ff0000");
     
-	
-	
     /////////////////////////////////////////////////////
     // Init Input
     /////////////////////////////////////////////////////
@@ -438,5 +442,8 @@ function GridEditor(rootDiv) {
 
     // load int grid
     let intGrid = LoadGridFromText(editor_level_1_asci, tileTypes);
+    gridDisplayEnt.Init(intGrid);
+    gridDisplayEnt.pos.x += gridDisplayEnt.halfWidth;
+    gridDisplayEnt.pos.y += gridDisplayEnt.halfHeight;
 	
 }

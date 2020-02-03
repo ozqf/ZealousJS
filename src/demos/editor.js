@@ -175,6 +175,34 @@ function GridEditor(rootDiv) {
 		colour: '#5555ff',
 		geomType: TILE_GEOM_TYPES.VOID,
 		asciChar: '.'
+	},
+	{
+		name: 'start',
+		index: 2,
+		colour: '#ffffff',
+		geomType: TILE_GEOM_TYPES.PATH,
+		asciChar: 's'
+	},
+	{
+		name: 'end',
+		index: 0,
+		colour: '#ffffff',
+		geomType: TILE_GEOM_TYPES.PATH,
+		asciChar: 'e'
+	},
+	{
+		name: 'objective',
+		index: 0,
+		colour: '#ffffff',
+		geomType: TILE_GEOM_TYPES.PATH,
+		asciChar: 'k'
+	},
+	{
+		name: 'enemy',
+		index: 0,
+		colour: '#ffffff',
+		geomType: TILE_GEOM_TYPES.PATH,
+		asciChar: 'x'
 	}
 	];
 	
@@ -366,16 +394,6 @@ function GridEditor(rootDiv) {
     ///////////////////////////////////////////////////////////////
     for (let y = 0; y < gridHeight; ++y) {
         for (let x = 0; x < gridWidth; ++x) {
-            /*
-            // Create display outline for grid cell
-            let plotX = (x * pix2Metre) + halfPix2Metre;
-            let plotY = (y * pix2Metre) + halfPix2Metre;
-            let outline = world.AddOutline(plotX, plotY, halfPix2Metre, halfPix2Metre, '#111111');
-            outline.tag = TAG_OUTLINE;
-            outline.gridX = x;
-            outline.gridY = y;
-            gridDisplayEntities.push(outline);
-            */
             // Create grid cell itself
             plotX = (x * pix2Metre) + halfPix2Metre;
             plotY = (y * pix2Metre) + halfPix2Metre;

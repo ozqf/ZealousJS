@@ -1,0 +1,61 @@
+<html>
+    <style>
+    .bordered {
+        border: solid 1px white
+    }
+    .row {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    .column {
+        display: flex;
+        flex-direction: column;
+        justify-content:flex-start;
+    }
+    .centered {
+        display: flex;
+        justify-content: center;
+    }
+    .panel {
+        flex-grow: 1;
+        width: 100%;
+        height: 100%;
+    }
+    .main-panel {
+        flex-basis: 75%
+    }
+    .side-panel {
+        flex-basis: 25%
+    }
+    body {
+        background-color: #222222;
+        color: limegreen;
+    }
+    button {
+        background-color: #005500;
+        border: none;
+        color: white;
+        padding: 8px, 16px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+    }
+    button:hover {
+        background-color: #009900;
+    }
+    </style>
+    <head>
+        <!-- <link rel="stylesheet" href="styles.css"> -->
+    </head>
+<body>
+<div class="row bordered panel">
+    <div class="bordered panel main-panel">Main</div>
+    <div class="column bordered panel side-panel">Side
+        <div class="bordered">Option 1</div>
+        <div class="bordered">Option 2</div>
+    </div>
+</div>
+</body>
+</html>

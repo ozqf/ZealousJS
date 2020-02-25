@@ -28,6 +28,34 @@
     .side-panel {
         flex-basis: 25%
     }
+    .viewport {
+        /* width: 100px; */
+        /* height: 100px; */
+        overflow: hidden;
+    }
+    .canvas {
+        position: relative;
+        background-color: black;
+    }
+    .entity-container {
+        position: absolute;
+        width: 128px;
+        height: 64px;
+        border: 1px solid green;
+    }
+    .test-pos-1 {
+        top: 0px;
+        left: 0px;
+    }
+    .test-pos-2 {
+        top: 32px;
+        left: 32px;
+    }
+    .test-pos-3 {
+        
+        top: 256px;
+        left: 128px;
+    }
     body {
         background-color: #222222;
         color: limegreen;
@@ -51,11 +79,55 @@
     </head>
 <body>
 <div class="row bordered panel">
-    <div class="bordered panel main-panel">Main</div>
-    <div class="column bordered panel side-panel">Side
+    <div class="bordered panel main-panel">
+        Main
+        <div class="bordered viewport panel">
+            <div class="canvas"
+                ondragenter="onDragEnter(event)"
+                ondragleave="onDragLeave(event)"
+                >
+                <div class="entity-container test-pos-2"
+                    draggable="true"
+                    ondragstart="onDragStart(event)"
+                    ondragend="onDragEnd(event)"
+                    >
+                    Entity 1
+                </div>
+                <!-- <div class="entity-container test-pos-3"
+                    draggable="true">
+                    Entity 2
+                </div> -->
+            </div>
+        </div>
+    </div>
+    <div class="column bordered panel side-panel"
+        ondrop="onDropOnSidePanel(event)">Side
         <div class="bordered">Option 1</div>
         <div class="bordered">Option 2</div>
     </div>
 </div>
+<script>
+console.log(`Foo`);
+document.addEventListener("drop", (ev) => {
+    console.log(`Drop doc`);
+});
+function onDragStart(ev) {
+    console.log(`Start drag`);
+}
+function onDragEnd(ev) {
+    console.log(`End drag`);
+}
+function onDragEnter(ev) { console.log(`Drag enter`); }
+function onDragLeave(ev) { console.log(`Drag leave`); }
+function onDrag(ev) { console.log(`Drag`); }
+function onDrop(ev) {
+    ev.stopPropagation();
+    console.log(`Drop`);
+}
+function onDropOnSidePanel(ev) {
+    ev.stopPropagation();
+    console.log(`Drop on side panel`);
+}
+</script>
 </body>
 </html>
